@@ -1,5 +1,8 @@
 cmake-build-debug
+cmake-build-release
+.DS_Store
 /.vscode/
 /devent/test/full_chain.pem
 /devent/test/private.key
 .idea
+release
