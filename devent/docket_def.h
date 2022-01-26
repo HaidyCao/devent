@@ -16,10 +16,10 @@
 
 #endif
 
-typedef struct sockaddr SOCK_ADDRESS;
+typedef struct sockaddr *SOCK_ADDRESS;
 
 typedef struct dns_server {
-    SOCK_ADDRESS *address;
+    SOCK_ADDRESS address;
     socklen_t socklen;
 } DnsServer;
 

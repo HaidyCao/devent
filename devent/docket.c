@@ -54,7 +54,7 @@ Docket *Docket_new() {
 }
 
 int Docket_set_dns_server(Docket *docket, char *server) {
-  SOCK_ADDRESS *address = malloc(sizeof(struct sockaddr_storage));
+  SOCK_ADDRESS address = malloc(sizeof(struct sockaddr_storage));
   socklen_t socklen = sizeof(struct sockaddr_storage);
 
   char s[strlen(server) + 4];

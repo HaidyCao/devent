@@ -62,6 +62,9 @@ target_link_libraries(
         # ssl
         ${OPENSSL_SSL}
         ${OPENSSL_CRYPTO}
+
+        # libresolv
+        resolv
 )
 
 add_dependencies(

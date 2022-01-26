@@ -6,6 +6,9 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <netinet/in.h>
+#include <resolv.h>
+
 #include "dns.h"
 #include "c_dns.h"
 #include "event.h"
@@ -18,10 +21,6 @@
 #include "docket.h"
 
 #define DNS_BUFFER_SIZE 4096
-
-static void init_default_dns(SOCK_ADDRESS *address, socklen_t *socklen) {
-  parse_address("114.114.114.114", address, socklen);
-}
 
 DocketDnsEvent *DocketDnsEvent_new(Docket *docket, int fd, const char *domain, unsigned short port) {
   DocketDnsEvent *event = calloc(1, sizeof(DocketDnsEvent));
@@ -68,11 +67,27 @@ void devent_dns_write(DocketDnsEvent *event) {
   }
 
   Docket *docket = event->docket;
-  SOCK_ADDRESS *dns_address = docket->dns_server.address;
+  SOCK_ADDRESS dns_address = docket->dns_server.address;
   socklen_t socklen = docket->dns_server.socklen;
+  // init dns name server
   if (dns_address == NULL) {
-    LOGE("dns server is null");
-    return;
+    struct __res_state state;
+    res_ninit(&state);
+
+    if (state.nscount > 0) {
+      size_t len = sizeof(state.nsaddr_list[0]);
+      dns_address = malloc(len);
+      memcpy(dns_address, &state.nsaddr_list[0], len);
+      docket->dns_server.address = dns_address;
+      docket->dns_server.socklen = len;
+    }
+
+    res_nclose(&state);
+
+    if (dns_address == NULL) {
+      LOGE("dns server is null");
+      return;
+    }
   }
 
   ssize_t size = sendto(event->dns_fd, dns_buffer, packet_len, 0, dns_address, socklen);
@@ -90,7 +105,7 @@ void devent_dns_read(DocketDnsEvent *event) {
   char dns_buffer[DNS_BUFFER_SIZE];
 
   Docket *docket = event->docket;
-  SOCK_ADDRESS *dns_address = docket->dns_server.address;
+  SOCK_ADDRESS dns_address = docket->dns_server.address;
   socklen_t socklen = docket->dns_server.socklen;
   if (dns_address == NULL) {
     LOGE("dns server is null");
