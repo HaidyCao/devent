@@ -58,6 +58,9 @@ void devent_dns_write(DocketDnsEvent *event) {
     LOGE("dns pack failed");
     DocketEvent *ev = event->event;
     event->event = NULL;
+
+    // free dns event first
+    ev->dns_event = NULL;
     DocketDnsEvent_free(event);
 
     if (ev->event_cb) {
@@ -117,6 +120,9 @@ void devent_dns_read(DocketDnsEvent *event) {
     LOGE("recvfrom %s failed: %s", sockaddr_to_string(dns_address, NULL, 0), devent_errno());
     DocketEvent *ev = event->event;
     event->event = NULL;
+
+    // free dns event first
+    ev->dns_event = NULL;
     DocketDnsEvent_free(event);
 
     if (ev->event_cb) {
@@ -130,6 +136,9 @@ void devent_dns_read(DocketDnsEvent *event) {
     LOGE("parse %s failed: %s", sockaddr_to_string(dns_address, NULL, 0), devent_errno());
     DocketEvent *ev = event->event;
     event->event = NULL;
+
+    // free dns event first
+    ev->dns_event = NULL;
     DocketDnsEvent_free(event);
 
     if (ev->event_cb) {
@@ -146,6 +155,9 @@ void devent_dns_read(DocketDnsEvent *event) {
     LOGE("c_dns_parse_first_ip %s failed: %s", sockaddr_to_string(dns_address, NULL, 0), devent_errno());
     DocketEvent *ev = event->event;
     event->event = NULL;
+
+    // free dns event first
+    ev->dns_event = NULL;
     DocketDnsEvent_free(event);
 
     if (ev->event_cb) {

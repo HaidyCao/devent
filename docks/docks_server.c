@@ -19,14 +19,12 @@ int main(int argc, char **args) {
 
   struct sockaddr_storage local;
   socklen_t socklen = sizeof(local);
-  const char *address = "127.0.0.1:1188";
   if (parse_address(config.address, (struct sockaddr *) &local, &socklen) == -1) {
-    LOGE("parse address failed: %s", address);
+    LOGE("parse address failed: %s", config.address);
     return -1;
   }
 
   Docket *docket = Docket_new();
-  Docket_set_dns_server(docket, "114.114.114.114");
 
   if (config.ssl) {
     Docket_create_ssl_listener_by_path(docket,
