@@ -34,6 +34,7 @@ if (DEVENT_SSL_ENABLE)
             libssl.a
 
             ${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/${OS}/lib/
+            ${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/${OS}/bin/
     )
 
     find_library(
@@ -41,6 +42,7 @@ if (DEVENT_SSL_ENABLE)
             libcrypto.a
 
             ${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/${OS}/lib/
+            ${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/${OS}/bin/
     )
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/${OS}/include)

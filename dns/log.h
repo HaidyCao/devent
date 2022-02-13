@@ -2,21 +2,23 @@
 #ifndef H_SOCKS_LOG
 #define H_SOCKS_LOG
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#ifdef WIN32
+const char *basename(const char *path);
+#else
 #include <libgen.h>
-#include <time.h>
+#endif
 
-#define LIB_LOG_TRACE -1
+#define LIB_LOG_TRACE (-1)
 #define LIB_LOG_DEBUG 0
 #define LIB_LOG_INFO 1
 #define LIB_LOG_WARNING 2
 #define LIB_LOG_ERROR 3
 
-void set_log_level(int level);
+void set_dns_log_level(int level);
+int get_dns_log_level(void);
 
-int get_log_level();
+#define set_log_level set_dns_log_level
+#define get_log_level get_dns_log_level
 
 #ifdef __ANDROID__
 #include <android/log.h>
@@ -31,6 +33,16 @@ void alog(int level, const char *fmt, ...);
 #define LOGE(fmt, ...) alog(LIB_LOG_ERROR, "[%s(%d):%s]: " fmt "\n", basename(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__)
 
 #define LOGW(fmt, ...) alog(LIB_LOG_WARNING, "[%s(%d):%s]: " fmt "\n", basename(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__)
+#elif defined(EVENT_LOG_DISABLED)
+#define LOGT(fmt, ...)
+
+#define LOGD(fmt, ...)
+
+#define LOGI(fmt, ...)
+
+#define LOGE(fmt, ...)
+
+#define LOGW(fmt, ...)
 #else
 void dns_log(int level, const char *fmt, ...);
 

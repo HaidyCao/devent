@@ -17,7 +17,7 @@
 #include "log.h"
 #include "dns.h"
 
-DocketEvent *DocketEvent_new(Docket *docket, int fd, void *ctx) {
+DocketEvent *DocketEvent_new(Docket *docket, SOCKET fd, void *ctx) {
   DocketEvent *event = calloc(1, sizeof(DocketEvent));
   event->docket = docket;
   event->fd = fd;

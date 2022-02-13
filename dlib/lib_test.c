@@ -3,7 +3,9 @@
 //
 
 #include <stdio.h>
+#ifndef _MSC_VER
 #include <strings.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include "c_array_list.h"
@@ -11,7 +13,6 @@
 #include "log.h"
 #include "c_hash_set.h"
 #include "c_array_map.h"
-#include "c_number_set.h"
 
 void test_c_array_list() {
     char *a = "123";
@@ -135,30 +136,12 @@ static void test_array_map() {
     CArrayMap_free(map, free);
 }
 
-static void test_number_set() {
-    CNumSet *set = CNumSet_new();
-
-    CNumSet_put(set, 1);
-    CNumSet_put(set, 2);
-
-    LOGD("len = %zu", CNumSet_length(set));
-
-    LOGD("contains 1 = %d", CNumSet_contains(set, 1));
-
-    CNumSet_clear(set);
-
-    LOGD("len = %zu", CNumSet_length(set));
-
-    CNumSet_free(set);
-}
-
 int main() {
-//    test_c_array_list();
-//    test_c_sparse_array();
+    //test_c_array_list();
+    //test_c_sparse_array();
 
-//    test_c_hash_set();
-//    test_array_map();
-    test_number_set();
+    //test_c_hash_set();
+    test_array_map();
 
     return 0;
 }

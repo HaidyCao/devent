@@ -5,6 +5,11 @@
 #include "c_hash.h"
 #include "c_hash_map.h"
 
+#ifdef _MSC_VER
+#define uint8_t unsigned char
+#define uint32_t unsigned int
+#endif
+
 #define C_HASH_MAP_DEFAULT_CAP 8
 
 struct c_node {

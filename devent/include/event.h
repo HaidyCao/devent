@@ -5,7 +5,9 @@
 #ifndef DOCKET_EVENT_H
 #define DOCKET_EVENT_H
 
+#ifndef _MSC_VER
 #include <sys/socket.h>
+#endif
 #include <stdlib.h>
 #include <stdbool.h>
 
@@ -37,7 +39,7 @@ typedef void (*docket_event_write_callback)(DocketEvent *ev, void *ctx);
 /**
  *
  */
-DocketEvent *DocketEvent_new(Docket *docket, int fd, void *ctx);
+DocketEvent *DocketEvent_new(Docket *docket, SOCKET fd, void *ctx);
 
 Docket *DocketEvent_getDocket(DocketEvent *event);
 

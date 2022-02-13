@@ -1,5 +1,3 @@
-#include <arpa/inet.h>
-
 #include "c_dns_header.h"
 
 const char *c_dns_flag_response_error_reason(unsigned char code)

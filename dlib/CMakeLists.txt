@@ -37,33 +37,7 @@ add_definitions("-D_GNU_SOURCE -D__USE_MISC")
 add_library( # Sets the name of the library.
         coll
 
-        # Sets the library as a shared library.
-        SHARED
-
-        # Provides a relative path to your source file(s).
         ${CMAKE_CURRENT_SOURCE_DIR}/log.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/c_hex_utils.c
-
-        c_hash.c
-        c_hash_set.c
-        c_number_set.c
-        c_array_map.c
-        c_sparse_array.c
-        clib.c
-        c_linked_list.c
-        c_hash_map.c
-        c_array.c
-        c_array_list.c)
-
-add_library( # Sets the name of the library.
-        coll-static
-
-        # Sets the library as a shared library.
-        STATIC
-
-        # Provides a relative path to your source file(s).
-        ${CMAKE_CURRENT_SOURCE_DIR}/log.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/c_hex_utils.c
 
         c_hash.c
         c_hash_set.c
@@ -72,7 +46,7 @@ add_library( # Sets the name of the library.
         clib.c
         c_linked_list.c
         c_hash_map.c
-        c_array.c
+        
         c_array_list.c)
 
 add_executable(
@@ -80,8 +54,7 @@ add_executable(
 
         lib_test.c
         c_array_list.c
-        log.c
-)
+        log.c)
 
 target_link_libraries(
         lib_test

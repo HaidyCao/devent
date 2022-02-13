@@ -14,15 +14,21 @@
 #include "docket.h"
 #include "docket_def.h"
 #include "listener_def.h"
+#include "win_def.h"
 
 char *devent_errno() {
   static char msg[1024];
   bzero(&msg, sizeof(msg));
+#ifdef WIN32
+  sprintf(msg, "lastError = %lu, WSALastError = %d", GetLastError(), WSAGetLastError());
+#else
   sprintf(msg, "errno = %d, errmsg: %s", errno, strerror(errno));
+#endif
   return msg;
 }
 
 int devent_turn_on_flags(int fd, int flags) {
+#ifndef WIN32
   int current_flags;
   // 获取给定文件描述符现有的flag
   // 其中fcntl的第二个参数F_GETFL表示要获取fd的状态
@@ -33,6 +39,7 @@ int devent_turn_on_flags(int fd, int flags) {
   current_flags |= flags;
   if (fcntl(fd, F_SETFL, current_flags) < 0)
     return -1;
+#endif
   return 0;
 }
 
@@ -49,7 +56,13 @@ int devent_turn_on_flags(int fd, int flags) {
  * @param events event: read or write
  * @param mod 1 delete, 0 do nothing
  */
-int devent_update_events(int dfd, int fd, int events, int mod) {
+int devent_update_events(
+#ifdef WIN32
+    HANDLE handle,
+#else
+    int dfd,
+#endif
+    SOCKET fd, int events, int mod) {
 #ifdef __APPLE__
   struct kevent ev[2];
   int n = 0;
@@ -72,6 +85,8 @@ int devent_update_events(int dfd, int fd, int events, int mod) {
   return r;
 #elif __linux__ || __ANDROID__
   // TODO
+#elif WIN32
+  return 0;
 #endif
 }
 
@@ -128,8 +143,9 @@ bool devent_parse_ipv4(const char *ip, unsigned char *result) {
   return true;
 }
 
-#ifdef DEVENT_SSL
 bool devent_do_ssl_handshake(DocketEvent *event) {
+  // TODO SSL on windows
+#ifdef DEVENT_SSL
   if (event->ssl && event->ssl_handshaking) {
     int r = SSL_do_handshake(event->ssl);
     if (r != 1) {
@@ -154,6 +170,6 @@ bool devent_do_ssl_handshake(DocketEvent *event) {
                           event->listener->ctx);
     }
   }
+#endif
   return true;
 }
-#endif

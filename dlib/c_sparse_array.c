@@ -3,8 +3,14 @@
 //
 #include <stdlib.h>
 #include <sys/types.h>
-#include <strings.h>
+
 #include <string.h>
+
+#ifndef _MSC_VER
+#include <strings.h>
+#else
+#define uint unsigned int
+#endif
 
 #include "c_sparse_array.h"
 

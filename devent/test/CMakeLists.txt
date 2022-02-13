@@ -2,12 +2,15 @@ cmake_minimum_required(VERSION 3.20)
 project(devent_test C)
 
 set(CMAKE_C_STANDARD 99)
+string(TOLOWER ${CMAKE_HOST_SYSTEM_NAME} OS)
 
 include_directories(../include)
 include_directories(../../dlib)
 
-add_executable(devent_test main.c utils_test.c utils_test.h echo_server_test.c echo_server_test.h telnet_test.c telnet_test.h buffer_test.c buffer_test.h ssl_telnet_test.c ssl_telnet_test.h ssl_echo_server_test.c ssl_echo_server_test.h)
+add_executable(devent_test main.c utils_test.c utils_test.h echo_server_test.c echo_server_test.h telnet_test.c telnet_test.h buffer_test.c buffer_test.h ssl_telnet_test.c ssl_telnet_test.h ssl_echo_server_test.c ssl_echo_server_test.h "win_main.c")
 
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -no-pie -mcmodel=large")
+#set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -no-pie -mcmodel=large")
 
 if (DEVENT_SSL_ENABLE)
     add_definitions("-DDEVENT_SSL")
@@ -16,10 +19,16 @@ if (DEVENT_SSL_ENABLE)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../dependencies/${OS}/include)
 endif ()
 
+add_executable(win_devent_test win_main.c)
+
+target_link_libraries(
+        win_devent_test
+)
+
 target_link_libraries(
         devent_test
 
-        coll-static
-        cdns-static
         devent
+        cdns-static
+        coll
 )

@@ -5,7 +5,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifndef _MSC_VER
 #include <libgen.h>
+#else
+
+#define basename 
+#endif
 #include <time.h>
 
 #define LIB_LOG_TRACE -1

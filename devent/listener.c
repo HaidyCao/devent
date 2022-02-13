@@ -3,15 +3,25 @@
 //
 
 #include <stddef.h>
+#ifndef _MSC_VER
 #include <sys/fcntl.h>
+#else
+#include <ws2tcpip.h>
+#endif
 
 #include "listener_def.h"
 #include "log.h"
 #include "utils_internal.h"
-#include "docket.h"
+#include "docket_def.h"
 
 #ifdef DEVENT_SSL
 #include "openssl/err.h"
+#endif
+
+#ifndef _MSC_VER
+#define FD_VALIDE(fd) fd == -1
+#else
+#define FD_VALIDE(fd) fd == NULL
 #endif
 
 static DocketListener *
@@ -20,13 +30,23 @@ Docket_create_listener_internal(Docket *docket,
                                 SSL_CTX *ssl_ctx,
                                 int (*cert_verify_callback)(X509_STORE_CTX *, void *),
 #endif
-                                docket_connect_cb cb, int fd, struct sockaddr *address, socklen_t socklen,
+                                docket_connect_cb cb,
+#ifndef _MSC_VER
+                                int fd,
+#else
+                                SOCKET fd,
+#endif
+                                struct sockaddr *address, socklen_t socklen,
                                 void *ctx) {
-  if (fd == -1) {
+  if (FD_VALIDE(fd)) {
+#ifndef _MSC_VER
     fd = socket(address->sa_family, SOCK_STREAM, 0);
+#else
+    fd = WSASocket(address->sa_family, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+#endif
   }
 
-  if (fd == -1) {
+  if (FD_VALIDE(fd)) {
     LOGD("docket_create_listener failed: fd = -1, reason = %s", devent_errno());
     return NULL;
   }
@@ -44,13 +64,21 @@ Docket_create_listener_internal(Docket *docket,
     return NULL;
   }
 
-  devent_turn_on_flags(fd, O_NONBLOCK);
-  devent_update_events(Docket_get_fd(docket), fd, DEVENT_READ_WRITE, 0);
-
-  DocketListener *listener = calloc(1, sizeof(DocketListener));
+  DocketListener* listener = calloc(1, sizeof(DocketListener));
   listener->fd = fd;
   listener->cb = cb;
   listener->ctx = ctx;
+
+#ifndef _MSC_VER
+  devent_turn_on_flags(fd, O_NONBLOCK);
+  devent_update_events(Docket_get_fd(docket), fd, DEVENT_READ_WRITE, 0);
+#else
+  IO_CONTEXT *io = malloc(sizeof(IO_CONTEXT));
+  io->op = IOCP_OP_ACCEPT;
+  io->socket = fd;
+  
+  HANDLE port = CreateIoCompletionPort(INVALID_HANDLE_VALUE, docket->fd, io, 0);
+#endif
 
 #ifdef DEVENT_SSL
   listener->ssl_ctx = ssl_ctx;

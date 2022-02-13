@@ -6,7 +6,6 @@
 #define DOCKET_DOCKET_H
 
 #include "def.h"
-#include "dns.h"
 
 /**
  * create a new Docket struct
@@ -42,7 +41,7 @@ DocketListener *Docket_get_listener(Docket *docket, int listener_fd);
  * @param fd event fd
  * @return event or NULL
  */
-DocketEvent *Docket_find_event(Docket *docket, int fd);
+DocketEvent *Docket_find_event(Docket *docket, SOCKET fd);
 
 /**
  * add event to docket
@@ -67,13 +66,6 @@ void Docket_remove_dns_event(DocketDnsEvent *event);
  * @param event event
  */
 void Docket_remove_event(DocketEvent *event);
-
-/**
- * get docket fd
- * @param docket docket
- * @return fd
- */
-int Docket_get_fd(Docket *docket);
 
 /**
  * Docket will loop if no error

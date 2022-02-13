@@ -2,10 +2,14 @@
 // Created by Haidy on 2021/10/31.
 //
 
-
-#include <sys/socket.h>
 #include <errno.h>
+
+#ifndef _MSC_VER
+#include <sys/socket.h>
 #include <sys/fcntl.h>
+#else
+#include <ws2tcpip.h>
+#endif
 
 #include "log.h"
 #include "utils_internal.h"

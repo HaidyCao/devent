@@ -23,6 +23,7 @@
 #include "event_def.h"
 #include "log.h"
 #include "dns.h"
+#include "win_def.h"
 
 #define MAX_EVENT 16
 
@@ -129,6 +130,91 @@ int epoll_loop(Docket *docket) {
         }
     }
 }
+
+#elif WIN32
+#include <WS2tcpip.h>
+
+static void iocp_loop(Docket *docket) {
+  DWORD num;
+  SOCKET client;
+  IO_CONTEXT *io = NULL;
+
+  while (true) {
+    if (GetQueuedCompletionStatus(docket->fd, &num, (PULONG_PTR) &client, (LPOVERLAPPED *) &io, WSA_INFINITE)) {
+      if (io && client) {
+        switch (io->op) {
+          case IOCP_OP_ACCEPT: {
+            docket_accept(docket, io->socket);
+            break;
+          }
+          case IOCP_OP_READ: {
+            DocketEvent *event = Docket_find_event(docket, io->socket);
+            if (event) {
+              event->connected = true;
+              if (event->event_cb) {
+                event->event_cb(event, DEVENT_CONNECT, event->ctx);
+
+                event = Docket_find_event(docket, io->socket);
+                if (event == NULL) {
+                  continue;
+                }
+              }
+              docket_on_handle_read_data(io, num, event);
+            } else {
+              LOGE("find event failed: %d", io->socket);
+              closesocket(io->socket);
+              IO_CONTEXT_free(io);
+            }
+            break;
+          }
+          case IOCP_OP_WRITE:
+
+            break;
+          case IOCP_OP_CONNECT: {
+            DocketEvent *event = Docket_find_event(docket, io->socket);
+            if (event) {
+              event->connected = true;
+              if (event->event_cb) {
+                event->event_cb(event, DEVENT_CONNECT, event->ctx);
+
+                event = Docket_find_event(docket, io->socket);
+                if (event == NULL) {
+                  continue;
+                }
+              }
+
+              // read and send data
+              io->op = IOCP_OP_READ_WRITE;
+              io->lpFlags = 0;
+              if (WSARecv(io->socket, &io->recvBuf, 1,
+                          NULL, &io->lpFlags, io, NULL) == SOCKET_ERROR
+                  && WSAGetLastError() != WSA_IO_PENDING) {
+                LOGI("WSARecv failed: %d", WSAGetLastError());
+                closesocket(io->socket);
+                DocketEvent_free(event);
+                IO_CONTEXT_free(io);
+                continue;
+              }
+
+              docket_on_event_write(event);
+            } else {
+              LOGE("find event failed: %d", io->socket);
+              closesocket(io->socket);
+              IO_CONTEXT_free(io);
+            }
+            break;
+          }
+          default:
+            // TODO
+            break;
+        }
+      } else {
+        // TODO
+      }
+    }
+  }
+}
+
 #endif
 
 int Docket_loop(Docket *docket) {
@@ -136,6 +222,8 @@ int Docket_loop(Docket *docket) {
   return kqueue_loop(docket);
 #elif __linux__ || __ANDROID__
   epoll_loop(docket);
+#elif __CYGWIN__
+  iocp_loop(docket);
 #else
   return -1;
 #endif

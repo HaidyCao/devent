@@ -30,27 +30,27 @@ add_subdirectory(docks)
 add_dependencies(
         devent
 
-        cdns-static
-        coll-static
+        cdns
+        coll
 )
 
 add_dependencies(
         docks
 
-        coll-static
+        coll
         devent
 )
 
 add_dependencies(
         dns_test
 
-        coll-static
+        coll
 )
 
 IF (ANDROID)
     target_link_libraries( # Specifies the target library.
             docket-jni
-            coll-static
+            coll
             docket
 
             # Links the target library to the log library

@@ -1,7 +1,15 @@
 #ifndef CLIB_H
 #define CLIB_H
 
+#ifndef WIN32
 #include <sys/socket.h>
+#else
+#include <WS2tcpip.h>
+typedef unsigned int uint;
+typedef __int16 u_int16_t;
+typedef __int32 uint32_t;
+
+#endif
 
 #ifdef __APPLE__
 
@@ -11,13 +19,11 @@
 #include <linux/in6.h>
 #endif
 
-#include <arpa/inet.h>
-
 #ifndef CLIB_ADDR
 #define CLIB_ADDR
 struct clib_addr {
-    char ip[128];
-    int port;
+  char ip[128];
+  int port;
 };
 
 #endif
@@ -54,6 +60,6 @@ u_int16_t ntohs_by_data(char *data, size_t offset);
 
 int str_is_ipv4(const char *str);
 
-time_t get_current_millisecond();
+time_t get_current_millisecond(void);
 
 #endif /* CLIB_H */

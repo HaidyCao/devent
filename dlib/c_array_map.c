@@ -4,6 +4,8 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
+#include <sys/types.h>
 
 #include "c_array_map.h"
 
@@ -74,6 +76,7 @@ static int CArrayMap_hash(CArrayMap *map, char *key) {
     if (map->hash) return map->hash(key);
     return c_hash(key);
 }
+
 
 static ssize_t key_index(CArrayMap *map, char *key, int hash) {
     ssize_t index = 0;

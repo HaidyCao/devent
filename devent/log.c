@@ -2,9 +2,50 @@
 // Created by Haidy on 2021/10/31.
 //
 
-#include <sys/time.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <time.h>
+
+#ifdef WIN32
+#include <sysinfoapi.h>
+#else
+#include <sys/time.h>
+#endif
+
+#ifdef WIN32
+typedef long int suseconds_t;
+
+struct timeval {
+  time_t tv_sec;
+  suseconds_t tv_usec;
+};
+
+static int gettimeofday(struct timeval *tp, void *tzp) {
+  time_t clock;
+  struct tm tm;
+  SYSTEMTIME wtm;
+  GetLocalTime(&wtm);
+  tm.tm_year = wtm.wYear - 1900;
+  tm.tm_mon = wtm.wMonth - 1;
+  tm.tm_mday = wtm.wDay;
+  tm.tm_hour = wtm.wHour;
+  tm.tm_min = wtm.wMinute;
+  tm.tm_sec = wtm.wSecond;
+  tm.tm_isdst = -1;
+  clock = mktime(&tm);
+  tp->tv_sec = clock;
+  tp->tv_usec = wtm.wMilliseconds * 1000;
+  return (0);
+}
+
+const char *basename(const char *path) {
+  char *name = strrchr(path, '\\');
+  if (name == NULL) {
+    return path;
+  }
+  return name;
+}
+#endif
 
 #include "log.h"
 

@@ -6,7 +6,6 @@
 #define DEVENT_WRITE_H
 
 #include <sys/socket.h>
-
 #include "def.h"
 
 void devent_write_data(DocketEvent *event, DocketBuffer *buffer, struct sockaddr *address, socklen_t socklen);

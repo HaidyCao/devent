@@ -6,8 +6,10 @@
 #define DEVENT_BUFFER_H
 
 #include <stdlib.h>
+#ifndef _MSC_VER
 #include <sys/unistd.h>
 #include <sys/socket.h>
+#endif
 
 #include "def.h"
 #include "c_linked_list.h"

@@ -5,6 +5,10 @@
 #include <string.h>
 #include <sys/types.h>
 
+#ifdef _MSC_VER
+#define uint unsigned int
+#endif
+
 #include "c_array_list.h"
 
 #define C_ARRAY_LIST_DEFAULT_CAP 8

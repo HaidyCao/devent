@@ -3,6 +3,7 @@
 //
 #include <stddef.h>
 #include <string.h>
+#include <stdint.h>
 
 #include "c_hash_set.h"
 
@@ -95,17 +96,20 @@ static bool resize(CHashSet *set, size_t len) {
     if (len < set->len) return true;
     if (len < set->cap * set->resize_ratio) return true;
 
-    size_t new_cap = set->cap << (uint8_t) 2;
+    size_t new_cap = set->cap << (uint8_t) 1;
     Node **new_data = realloc(set->data, new_cap * sizeof(Node *));
     if (new_data == NULL) {
-        new_data = calloc(new_cap, sizeof(Node *));
+        new_data = malloc(new_cap * sizeof(Node *));
         if (new_data == NULL) {
             return false;
         }
-        memcpy(new_data, set->data, set->cap);
+        memcpy(new_data, set->data, set->cap * sizeof(Node*));
         free(set->data);
     } else {
-        bzero(new_data + set->cap, new_cap - set->cap);
+        for (size_t i = set->cap; i < new_cap; i++)
+        {
+            new_data[i] = NULL;
+        }
     }
     set->data = new_data;
     set->cap = new_cap;

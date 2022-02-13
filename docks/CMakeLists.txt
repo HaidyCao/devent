@@ -65,7 +65,7 @@ add_executable(
 target_link_libraries(
         docks
 
-        coll-static
+        coll
         cdns-static
         devent
 )
@@ -73,15 +73,15 @@ target_link_libraries(
 target_link_libraries(
         docks-server
 
-        coll-static
-        cdns-static
         devent
+        cdns-static
+        coll
 )
 
 target_link_libraries(
         docks-client
 
-        coll-static
-        cdns-static
         devent
+        cdns-static
+        coll
 )

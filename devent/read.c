@@ -3,20 +3,42 @@
 //
 
 #include <string.h>
-#include <unistd.h>
 #include <errno.h>
+#ifdef WIN32
+#include <WS2tcpip.h>
+#else
+#include <unistd.h>
+#endif
 
 #include "read.h"
 #include "log.h"
 #include "write.h"
 #include "utils_internal.h"
+#include "docket_def.h"
 #include "event_def.h"
 #include "listener_def.h"
+#include "win_def.h"
 
 #ifdef DEVENT_SSL
 #include "openssl/ssl.h"
 #endif
 
+#ifdef WIN32
+void docket_on_handle_read_data(IO_CONTEXT *io, DWORD size, DocketEvent *event) {
+  if (size == 0) return;
+
+  if (!devent_do_ssl_handshake(event)) {
+    return;
+  }
+
+  // TODO SSL
+
+  DocketBuffer_write(event->in_buffer, io->recvBuf.buf, size);
+  if (devent_read_enable(event) && event->read_cb) {
+    event->read_cb(event, event->ctx);
+  }
+}
+#else
 void docket_on_event_read(DocketEvent *event) {
   LOGD("");
   set_write_disable(event);
@@ -26,15 +48,13 @@ void docket_on_event_read(DocketEvent *event) {
   Docket *docket = event->docket;
 
   if (!devent_read_enable(event)) {
-    devent_update_events(Docket_get_fd(docket), fd, event->ev, 1);
+    devent_update_events(docket->fd, fd, event->ev, 1);
     return;
   }
 
-#ifdef DEVENT_SSL
   if (!devent_do_ssl_handshake(event)) {
     return;
   }
-#endif
 
   ssize_t len;
   struct sockaddr_storage address;
@@ -95,3 +115,4 @@ void docket_on_event_read(DocketEvent *event) {
     devent_close_internal(event, DEVENT_READ_EOF);
   }
 }
+#endif

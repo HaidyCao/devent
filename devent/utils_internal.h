@@ -15,7 +15,13 @@
  */
 int devent_turn_on_flags(int fd, int flags);
 
-int devent_update_events(int kq, int fd, int events, int mod);
+int devent_update_events(
+#ifdef WIN32
+    HANDLE handle,
+#else
+    int dfd,
+#endif
+    SOCKET fd, int events, int mod);
 
 #include "event.h"
 
@@ -23,8 +29,6 @@ void devent_close_internal(DocketEvent *event, int what);
 
 bool errno_is_EAGAIN(int eno);
 
-#ifdef DEVENT_SSL
 bool devent_do_ssl_handshake(DocketEvent *event);
-#endif
 
 #endif //DOCKET_DEVENT_UTILS_INTERNAL_H

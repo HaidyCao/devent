@@ -5,7 +5,9 @@
 #ifndef DOCKET_LISTENER_H
 #define DOCKET_LISTENER_H
 
+#ifndef _MSC_VER
 #include <sys/socket.h>
+#endif
 
 #include "def.h"
 

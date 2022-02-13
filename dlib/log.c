@@ -3,7 +3,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <sys/time.h>
+//#include <sys/time.h>
 
 static int log_level = 0;
 
@@ -68,11 +68,11 @@ void slog(int level, const char *fmt, ...) {
     time_t now_time = time(NULL);
     struct tm *l = localtime(&now_time);
 
-    struct timeval t;
-    gettimeofday(&t, NULL);
+    //struct timeval t;
+    //gettimeofday(&t, NULL);
 
-    printf("%04d-%02d-%02d %02d:%02d:%02d %03d %s: ", l->tm_year + 1900, l->tm_mon + 1, l->tm_mday, l->tm_hour,
-           l->tm_min, l->tm_sec, (int) (t.tv_usec / 1000), log_level_to_string(level));
+    //printf("%04d-%02d-%02d %02d:%02d:%02d %03d %s: ", l->tm_year + 1900, l->tm_mon + 1, l->tm_mday, l->tm_hour,
+    //       l->tm_min, l->tm_sec, (int) (t.tv_usec / 1000), log_level_to_string(level));
 
     va_list ap;
     va_start(ap, fmt);

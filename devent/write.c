@@ -27,7 +27,7 @@ void devent_write_data(DocketEvent *event, DocketBuffer *buffer, struct sockaddr
       if (wr == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
           set_write_disable(event);
-          devent_update_events(Docket_get_fd(docket), fd, event->ev, 0);
+          devent_update_events(docket->fd, fd, event->ev, 0);
         } else {
           LOGE("write_data: unknown error: %s", devent_errno());
           devent_close_internal(event, DEVENT_WRITE | DEVENT_ERROR);
@@ -42,7 +42,7 @@ void devent_write_data(DocketEvent *event, DocketBuffer *buffer, struct sockaddr
     }
   } else if (!write_enable) {
     set_write_enable(event);
-    devent_update_events(Docket_get_fd(docket), fd, event->ev, 0);
+    devent_update_events(docket->fd, fd, event->ev, 0);
   }
 
   if (event->write_cb) {

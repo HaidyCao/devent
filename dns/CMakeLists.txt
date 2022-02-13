@@ -27,38 +27,16 @@ if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
     set(CMAKE_C_LDFLAGS "${CMAKE_C_LDFLAGS} -s")
     message("Release build")
 else ()
-    add_definitions("-Wall -g")
-
+    add_definitions("-Wall")
 endif ()
 
-add_definitions("-D_GNU_SOURCE")
+add_definitions("-DEVENT_LOG_DISABLED")
 
 add_library( # Sets the name of the library.
         cdns
 
-        # Sets the library as a shared library.
-        SHARED
-
-        log.c
         c_dns.c
         c_dns_header.c)
-
-add_library( # Sets the name of the library.
-        cdns-static
-
-        # Sets the library as a shared library.
-        SHARED
-
-        log.c
-        c_dns.c
-        c_dns_header.c)
-
-# Searches for a specified prebuilt library and stores the path as a
-# variable. Because CMake includes system libraries in the search path by
-# default, you only need to specify the name of the public NDK library
-# you want to add. CMake verifies that the library exists before
-# completing its build.
-
 
 if (ANDROID)
     find_library( # Sets the name of the path variable.
@@ -83,12 +61,6 @@ endif ()
 
 target_link_libraries(
         cdns
-
-        ${log-lib}
-)
-
-target_link_libraries(
-        cdns-static
 
         ${log-lib}
 )

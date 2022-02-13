@@ -3,7 +3,7 @@
 //
 
 #include <stdlib.h>
-#include <strings.h>
+#include <string.h>
 
 #ifdef __APPLE__
 
@@ -13,6 +13,18 @@
 
 #include <sys/epoll.h>
 
+#elif __CYGWIN__
+
+#include <ioapiset.h>
+#include <handleapi.h>
+
+#endif
+
+#ifdef WIN32
+#include <WinSock2.h>
+#include <WS2tcpip.h>
+
+#pragma comment(lib, "ws2_32.lib")
 #endif
 
 #include "docket.h"
@@ -22,8 +34,22 @@
 #include "log.h"
 #include "event.h"
 #include "event_def.h"
-#include "utils_internal.h"
 #include "clib.h"
+
+#ifdef WIN32
+
+void IO_CONTEXT_free(IO_CONTEXT *ctx) {
+  if (ctx == NULL) return;
+
+  free(ctx->local);
+  free(ctx->remote);
+
+  free(ctx->recvBuf.buf);
+
+  free(ctx);
+}
+
+#endif
 
 Docket *Docket_new() {
   Docket *docket = calloc(1, sizeof(Docket));
@@ -31,6 +57,9 @@ Docket *Docket_new() {
   docket->fd = kqueue();
 #elif __linux__ || __ANDROID__
   docket->fd = epoll_create1(0);
+
+#elif WIN32
+  docket->fd = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
 #else
   free(docket);
   docket = NULL;
@@ -57,9 +86,9 @@ int Docket_set_dns_server(Docket *docket, char *server) {
   SOCK_ADDRESS address = malloc(sizeof(struct sockaddr_storage));
   socklen_t socklen = sizeof(struct sockaddr_storage);
 
-  char s[strlen(server) + 4];
+  char s[1024];
   if (strstr(server, ":")) {
-    strcpy(s, server);
+    sprintf(s, "%s", server);
   } else {
     sprintf(s, "%s:53", server);
   }
@@ -118,12 +147,8 @@ void Docket_remove_event(DocketEvent *event) {
   CSparseArray_remove(docket->events, event->fd);
 }
 
-DocketEvent *Docket_find_event(Docket *docket, int fd) {
+DocketEvent *Docket_find_event(Docket *docket, SOCKET fd) {
   if (docket == NULL)
     return NULL;
   return CSparseArray_get(docket->events, fd);
-}
-
-int Docket_get_fd(Docket *docket) {
-  return docket->fd;
 }

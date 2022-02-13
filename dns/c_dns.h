@@ -1,8 +1,10 @@
 #ifndef C_DNS_H
 #define C_DNS_H
 
+#ifndef WIN32
 #include <arpa/inet.h>
 #include <netdb.h>
+#endif
 #include <sys/types.h>
 
 #define C_DNS_QTYPE_A 1
@@ -40,6 +42,11 @@ int c_dns_parse_first_ip(struct hostent *host, struct sockaddr *addr, size_t *ad
 
 typedef int (*c_dns_ipv4_cb)(char *domain, struct in_addr *ip);
 typedef int (*c_dns_ipv6_cb)(char *domain, struct in6_addr *ip);
-int c_dns_gen_inet_response(char *data, size_t len, char **resp_data, size_t *resp_len, c_dns_ipv4_cb ipv4_cb, c_dns_ipv6_cb ipv6_cb);
+int c_dns_gen_inet_response(char *data,
+                            size_t len,
+                            char **resp_data,
+                            size_t *resp_len,
+                            c_dns_ipv4_cb ipv4_cb,
+                            c_dns_ipv6_cb ipv6_cb);
 
 #endif
