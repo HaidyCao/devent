@@ -37,6 +37,19 @@
 #include "clib.h"
 
 #ifdef WIN32
+#define RECV_BUF_SIZE 4096
+
+IO_CONTEXT *IO_CONTEXT_new(int op, SOCKET socket) {
+    IO_CONTEXT *ctx = calloc(1, sizeof(IO_CONTEXT));
+    ctx->op = op;
+    ctx->socket = socket;
+    if (ctx->op == IOCP_OP_READ) {
+        ctx->recvBuf.len = RECV_BUF_SIZE;
+        ctx->recvBuf.buf = malloc(RECV_BUF_SIZE);
+    } else {
+        ctx->recvBuf.buf = NULL;
+    }
+}
 
 void IO_CONTEXT_free(IO_CONTEXT *ctx) {
   if (ctx == NULL) return;

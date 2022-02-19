@@ -14,8 +14,6 @@ typedef int SOCKET;
 #define IOCP_OP_WRITE 2
 #define IOCP_OP_CONNECT 4
 
-#define IOCP_OP_READ_WRITE (IOCP_OP_READ | IOCP_OP_WRITE)
-
 typedef struct {
   OVERLAPPED lpOverlapped;
   int op;
@@ -31,6 +29,7 @@ typedef struct {
 
 } IO_CONTEXT;
 
+IO_CONTEXT *IO_CONTEXT_new(int op, SOCKET socket);
 void IO_CONTEXT_free(IO_CONTEXT *ctx);
 
 #endif

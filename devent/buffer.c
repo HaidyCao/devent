@@ -4,14 +4,21 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include <sys/socket.h>
+
 #include <errno.h>
+
+#include "win_def.h"
+
+#ifndef WIN32
+#include <sys/socket.h>
 #include <unistd.h>
+#endif
 
 #ifdef DEVENT_MULTI_THREAD
 #include <pthread.h>
 #endif
 
+#include "docket_def.h"
 #include "def.h"
 #include "buffer.h"
 #include "c_linked_list.h"
@@ -246,7 +253,7 @@ ssize_t DocketBuffer_peek_full(DocketBuffer *buffer, char *data, size_t len) {
     return result;
 }
 
-ssize_t DocketBuffer_send(DocketBuffer *buffer, int fd, int flags, struct sockaddr *address, socklen_t socklen
+ssize_t DocketBuffer_send(DocketBuffer *buffer, SOCKET fd, int flags, struct sockaddr *address, socklen_t socklen
 #ifdef DEVENT_SSL
         , SSL *ssl
 #endif
@@ -263,6 +270,13 @@ ssize_t DocketBuffer_send(DocketBuffer *buffer, int fd, int flags, struct sockad
     } else
 #endif
 
+#ifdef WIN32
+    if (address) {
+        LPWSABUF buf;
+        IO_CONTEXT *io = IO_CONTEXT_new(IOCP_OP_WRITE, fd);
+        WSASendTo(fd, buf, 1, head->len, flags, address, socklen, );
+    }
+#else
     if (address) {
         wr = sendto(fd, head->data + head->pos, head->len, flags, address, socklen);
     } else {
@@ -276,6 +290,7 @@ ssize_t DocketBuffer_send(DocketBuffer *buffer, int fd, int flags, struct sockad
     if (wr == -1 || wr == 0) {
         return -1;
     }
+#endif
 
     LOCK(buffer, {
         c_linked_list_remove_header(buffer->list);

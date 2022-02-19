@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <errhandlingapi.h>
 #include <WinSock2.h>
+#include <WS2tcpip.h>
 
 #define bzero(p, s) memset(p, 0, s)
 typedef SSIZE_T ssize_t;

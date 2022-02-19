@@ -184,16 +184,18 @@ static void iocp_loop(Docket *docket) {
               }
 
               // read and send data
-              io->op = IOCP_OP_READ_WRITE;
-              io->lpFlags = 0;
-              if (WSARecv(io->socket, &io->recvBuf, 1,
-                          NULL, &io->lpFlags, io, NULL) == SOCKET_ERROR
-                  && WSAGetLastError() != WSA_IO_PENDING) {
-                LOGI("WSARecv failed: %d", WSAGetLastError());
-                closesocket(io->socket);
-                DocketEvent_free(event);
-                IO_CONTEXT_free(io);
-                continue;
+              if (devent_read_enable(event)) {
+                  io->op = IOCP_OP_READ;
+                  io->lpFlags = 0;
+                  if (WSARecv(io->socket, &io->recvBuf, 1,
+                              NULL, &io->lpFlags, io, NULL) == SOCKET_ERROR
+                      && WSAGetLastError() != WSA_IO_PENDING) {
+                      LOGI("WSARecv failed: %d", WSAGetLastError());
+                      closesocket(io->socket);
+                      DocketEvent_free(event);
+                      IO_CONTEXT_free(io);
+                      continue;
+                  }
               }
 
               docket_on_event_write(event);

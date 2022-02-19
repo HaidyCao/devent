@@ -76,7 +76,7 @@ ssize_t DocketBuffer_peek(DocketBuffer *buffer, char *data, size_t len);
  */
 ssize_t DocketBuffer_peek_full(DocketBuffer *buffer, char *data, size_t len);
 
-ssize_t DocketBuffer_send(DocketBuffer *buffer, int fd, int flags, struct sockaddr *address, socklen_t socklen
+ssize_t DocketBuffer_send(DocketBuffer *buffer, SOCKET fd, int flags, struct sockaddr *address, socklen_t socklen
 #ifdef DEVENT_SSL
         ,SSL *ssl
 #endif
