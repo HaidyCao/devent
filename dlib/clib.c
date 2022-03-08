@@ -288,7 +288,7 @@ static void append_hex(char *dst, int *index, int i) {
   }
   int j;
   for (j = 7; j >= 0; j--) {
-    int v = i >> (uint) j * 4;
+    int v = i >> (uint32_t) j * 4;
     if (v > 0) {
       dst[*index] = hexDigit[v & 0xf];
       (*index)++;
@@ -296,13 +296,13 @@ static void append_hex(char *dst, int *index, int i) {
   }
 }
 
-char *ipv6_to_string(char ip[16]) {
-  int e0 = -1;
-  int e1 = -1;
+char *ipv6_to_string(const char ip[16]) {
+  size_t e0 = -1;
+  size_t e1 = -1;
 
   size_t i;
   for (i = 0; i < IPV6_LEN; i += 2) {
-    int j = i;
+    size_t j = i;
     while (j < IPV6_LEN && ip[j] == 0 && ip[j + 1] == 0) {
       j += 2;
     }
@@ -338,7 +338,7 @@ char *ipv6_to_string(char ip[16]) {
       ip_str[index] = ':';
       index++;
     }
-    append_hex(ip_str, &index, (((uint) ip[i]) << 8) | (uint) ip[i + 1]);
+    append_hex(ip_str, &index, (((uint32_t) ip[i]) << 8) | (uint32_t) ip[i + 1]);
   }
   return ip_str;
 }
@@ -360,9 +360,9 @@ void n_write_uint32_t_to_data(char *data, uint32_t v, size_t offset) {
   data[offset + 3] = (char) (v & (u_char) 0xFF);
 }
 
-u_int16_t ntohs_by_data(char *data, size_t offset) {
-  u_int16_t a = (u_int16_t) (((u_int16_t) data[offset]) << 8u) & (u_int16_t) 0xFF00;
-  u_int16_t b = ((u_int16_t) data[offset + 1]) & (u_int16_t) 0xFF;
+uint16_t ntohs_by_data(char *data, size_t offset) {
+  uint16_t a = (uint16_t) (((uint16_t) data[offset]) << 8u) & (uint16_t) 0xFF00;
+  uint16_t b = ((uint16_t) data[offset + 1]) & (uint16_t) 0xFF;
 
   return a | b;
 }

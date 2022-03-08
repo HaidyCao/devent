@@ -4,6 +4,7 @@ project(devent C)
 set(CMAKE_C_STANDARD 99)
 
 string(TOLOWER ${CMAKE_HOST_SYSTEM_NAME} OS)
+message(OS = ${OS})
 
 include_directories(../dlib ./include ../dns)
 add_library(devent
@@ -51,6 +52,12 @@ if (DEVENT_SSL_ENABLE)
     message("OPENSSL_CRYPTO: ${OPENSSL_CRYPTO}")
 endif ()
 
+if (${OS} STREQUAL "windows")
+    set(LIBRESOLV "")
+else ()
+    set(LIBRESOLV "resolv")
+endif ()
+
 add_dependencies(
         devent
 
@@ -66,7 +73,7 @@ target_link_libraries(
         ${OPENSSL_CRYPTO}
 
         # libresolv
-        resolv
+        ${LIBRESOLV}
 )
 
 add_dependencies(

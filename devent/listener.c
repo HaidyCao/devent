@@ -3,56 +3,50 @@
 //
 
 #include <stddef.h>
-#ifndef _MSC_VER
+#ifndef WIN32
 #include <sys/fcntl.h>
 #else
-#include <ws2tcpip.h>
 #endif
 
 #include "listener_def.h"
-#include "log.h"
 #include "utils_internal.h"
 #include "docket_def.h"
+#include "docket.h"
+#include "accept.h"
+#include "log.h"
 
 #ifdef DEVENT_SSL
 #include "openssl/err.h"
 #endif
 
-#ifndef _MSC_VER
-#define FD_VALIDE(fd) fd == -1
-#else
-#define FD_VALIDE(fd) fd == NULL
-#endif
-
 static DocketListener *
 Docket_create_listener_internal(Docket *docket,
 #ifdef DEVENT_SSL
-                                SSL_CTX *ssl_ctx,
-                                int (*cert_verify_callback)(X509_STORE_CTX *, void *),
+    SSL_CTX *ssl_ctx,
+    int (*cert_verify_callback)(X509_STORE_CTX *, void *),
 #endif
                                 docket_connect_cb cb,
-#ifndef _MSC_VER
-                                int fd,
-#else
                                 SOCKET fd,
-#endif
                                 struct sockaddr *address, socklen_t socklen,
                                 void *ctx) {
-  if (FD_VALIDE(fd)) {
-#ifndef _MSC_VER
+  if (fd == -1) {
+#ifndef WIN32
     fd = socket(address->sa_family, SOCK_STREAM, 0);
+    if (fd == -1) {
+      LOGD("docket_create_listener failed: fd = -1, reason = %s", devent_errno());
+      return NULL;F
+    }
 #else
-    fd = WSASocket(address->sa_family, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+    fd = WSASocketW(address->sa_family, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+    if (fd == INVALID_SOCKET) {
+      LOGD("docket_create_listener failed: fd = -1, reason = %s", devent_errno());
+      return NULL;
+    }
 #endif
-  }
-
-  if (FD_VALIDE(fd)) {
-    LOGD("docket_create_listener failed: fd = -1, reason = %s", devent_errno());
-    return NULL;
   }
 
   // reuse address
-  setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, address, socklen);
+  setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (const char *) address, socklen);
 
   if (bind(fd, address, socklen) == -1) {
     LOGD("docket_create_listener failed: bind = -1, reason = %s", devent_errno());
@@ -64,20 +58,23 @@ Docket_create_listener_internal(Docket *docket,
     return NULL;
   }
 
-  DocketListener* listener = calloc(1, sizeof(DocketListener));
+  DocketListener *listener = calloc(1, sizeof(DocketListener));
   listener->fd = fd;
   listener->cb = cb;
   listener->ctx = ctx;
 
-#ifndef _MSC_VER
+#ifndef WIN32
   devent_turn_on_flags(fd, O_NONBLOCK);
   devent_update_events(Docket_get_fd(docket), fd, DEVENT_READ_WRITE, 0);
 #else
-  IO_CONTEXT *io = malloc(sizeof(IO_CONTEXT));
-  io->op = IOCP_OP_ACCEPT;
-  io->socket = fd;
-  
-  HANDLE port = CreateIoCompletionPort(INVALID_HANDLE_VALUE, docket->fd, io, 0);
+  CreateIoCompletionPort((HANDLE) fd, docket->fd, fd, 0);
+
+  SOCKET acceptSocket = WSASocketW(address->sa_family, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+  IO_CONTEXT *io = IO_CONTEXT_new(IOCP_OP_ACCEPT, acceptSocket);
+  io->local_len = socklen;
+  io->remote_len = socklen;
+
+  docket_accept(docket, fd, acceptSocket, io);
 #endif
 
 #ifdef DEVENT_SSL
@@ -150,7 +147,7 @@ Docket_create_listener(Docket *docket, docket_connect_cb cb, int fd, struct sock
                        void *ctx) {
   return Docket_create_listener_internal(docket,
 #ifdef DEVENT_SSL
-                                         NULL, NULL,
+      NULL, NULL,
 #endif
                                          cb, fd, address, socklen, ctx);
 }

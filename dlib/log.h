@@ -22,7 +22,7 @@
 
 void set_log_level(int level);
 
-int get_log_level();
+int get_log_level(void);
 
 #ifdef __ANDROID__
 #include <android/log.h>

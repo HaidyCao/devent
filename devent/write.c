@@ -3,28 +3,35 @@
 //
 
 #include <stdbool.h>
-#include <errno.h>
 
 #include "write.h"
 #include "utils_internal.h"
 #include "log.h"
 #include "docket.h"
 #include "docket_def.h"
+#include "event.h"
 #include "event_def.h"
-#include "win_def.h"
+#include "buffer.h"
 
-void devent_write_data(DocketEvent *event, DocketBuffer *buffer, struct sockaddr *address, socklen_t socklen) {
-  int fd = event->fd;
-  LOGD("fd = %d", fd);
+void devent_write_data(DocketEvent *event, DocketBuffer *buffer) {
+  SOCKET fd = event->fd;
   Docket *docket = event->docket;
 
-#ifdef WIN32
-  int flags = 0;
-#else
-  int flags = MSG_NOSIGNAL;
-#endif
   bool write_enable = devent_write_enable(event);
   if (write_enable && DocketBuffer_length(buffer) > 0) {
+#ifdef WIN32
+    ssize_t send_result = DocketBuffer_send(buffer, fd, 0, event->remote_address, event->remote_address_len
+#ifdef DEVENT_SSL
+        , event->ssl
+#endif
+    );
+    if (send_result == -1) {
+      LOGE("DocketBuffer_send failed: %s", devent_errno());
+      DocketEvent_free(event);
+      return;
+    }
+#else
+    int flags = MSG_NOSIGNAL;
     while (devent_write_enable(event) && DocketBuffer_length(buffer) > 0) {
 
       ssize_t wr = DocketBuffer_send(buffer, fd, flags, address, socklen
@@ -48,14 +55,17 @@ void devent_write_data(DocketEvent *event, DocketBuffer *buffer, struct sockaddr
         LOGD("write length: %d", wr);
       }
     }
+#endif
   } else if (!write_enable) {
     set_write_enable(event);
     devent_update_events(docket->fd, fd, event->ev, 0);
   }
 
+#ifndef WIN32
   if (event->write_cb) {
     event->write_cb(event, event->ctx);
   }
+#endif
 }
 
 #ifdef WIN32
@@ -64,12 +74,12 @@ void docket_on_event_write(DocketEvent *event) {
     return;
   }
 
-  IO_CONTEXT *io = IO_CONTEXT_new(IOCP_OP_READ, event->fd);
   // TODO SSL
-
-
+  devent_write_data(event, event->out_buffer);
 }
 #else
+#include <errno.h>
+
 void docket_on_event_write(DocketEvent *event) {
   int fd = DocketEvent_getFD(event);
 

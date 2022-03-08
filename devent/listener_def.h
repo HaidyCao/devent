@@ -5,11 +5,10 @@
 #ifndef DOCKET_DEVENT_LISTENER_DEF_H
 #define DOCKET_DEVENT_LISTENER_DEF_H
 
-#include "def.h"
 #include "listener.h"
 
 struct docket_listener {
-  int fd;
+  SOCKET fd;
   docket_connect_cb cb;
   void *ctx;
 

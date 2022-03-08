@@ -6,9 +6,8 @@
 #include <string.h>
 
 #ifdef WIN32
-#include <winsock.h>
+#include <WinSock2.h>
 #include <MSWSock.h>
-#define bzero(p, s) memset(p, 0, s)
 
 static GUID GuidConnectex = WSAID_CONNECTEX;
 static LPFN_CONNECTEX lpfnConnectex = NULL;
@@ -18,7 +17,6 @@ static LPFN_CONNECTEX lpfnConnectex = NULL;
 #include <unistd.h>
 #include <strings.h>
 
-typedef closesocket(fd) close(fd)
 #endif
 
 #include "clib.h"
@@ -29,17 +27,32 @@ typedef closesocket(fd) close(fd)
 #include "event_def.h"
 #include "dns.h"
 #include "docket_def.h"
+#include "win_def.h"
+
+static void on_dns_read(DocketEvent *event, void *ctx) {
+  docket_dns_read(event);
+}
 
 static unsigned int new_fd(int fd_type, struct sockaddr *address) {
-  if (address->sa_family != AF_INET && address->sa_family != AF_INET6) {
-    return -1;
+  int sa_family;
+  if (address != NULL) {
+    if (address->sa_family != AF_INET && address->sa_family != AF_INET6) {
+      return -1;
+    }
+    sa_family = address->sa_family;
+  } else {
+    sa_family = AF_INET;
   }
 
-  if (fd_type == SOCK_DGRAM) {
-    return socket(address->sa_family, fd_type, IPPROTO_UDP);
-  } else {
-    return socket(address->sa_family, fd_type, 0);
-  }
+//  if (fd_type == SOCK_DGRAM) {
+//    return socket(sa_family, fd_type, IPPROTO_UDP);
+//  } else {
+#ifdef WIN32
+  return WSASocketW(sa_family, fd_type, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+#else
+  return socket(address->sa_family, fd_type, 0);
+#endif
+//  }
 }
 
 static DocketEvent *
@@ -56,11 +69,11 @@ DocketEvent_connect_internal(Docket *docket,
     return NULL;
   }
 
-  if (fd == -1 || fd == 0) {
+  if (fd == -1) {
     fd = new_fd(fd_type, address);
   }
 
-  if (fd == -1 || fd == 0) {
+  if (fd == -1) {
     return NULL;
   }
 
@@ -85,15 +98,21 @@ DocketEvent_connect_internal(Docket *docket,
         return NULL;
       }
     }
-    IO_CONTEXT *io = calloc(1, sizeof(IO_CONTEXT));
-    io->socket = fd;
-    io->op = IOCP_OP_CONNECT;
+    IO_CONTEXT *io = IO_CONTEXT_new(IOCP_OP_CONNECT, fd);
     io->remote = address;
     io->remote_len = socklen;
 
     // local
     io->local_len = sizeof(struct sockaddr_storage);
-    io->local = malloc(io->local_len);
+    io->local = calloc(1, sizeof(struct sockaddr_storage));
+    io->local->sa_family = address->sa_family;
+    if (io->local->sa_family == AF_INET) {
+      ((struct sockaddr_in *) io->local)->sin_addr = in4addr_any;
+      ((struct sockaddr_in *) io->local)->sin_port = htons(0);
+    } else if (io->local->sa_family == AF_INET6) {
+      ((struct sockaddr_in6 *) io->local)->sin6_addr = in6addr_any;
+      ((struct sockaddr_in6 *) io->local)->sin6_port = htons(0);
+    }
 
     // before connect we must call bind function first
     if (bind(fd, io->local, io->local_len) == SOCKET_ERROR) {
@@ -120,18 +139,21 @@ DocketEvent_connect_internal(Docket *docket,
     }
 #endif
   } else {
-    // TODO test
-    struct sockaddr_in local_addr;
-    size_t local_addr_len = sizeof(local_addr);
-    bzero(&local_addr, local_addr_len);
-    local_addr.sin_addr.s_addr = INADDR_ANY;
-    local_addr.sin_port = htons(0);
-    local_addr.sin_family = AF_INET;
-    if (bind(fd, (struct sockaddr *) &local_addr, local_addr_len) == -1) {
-      LOGD("bind udp failed: fd = %d", fd);
+    struct sockaddr_in local;
+    socklen_t local_len = sizeof(local);
+    bzero(&local, local_len);
+    local.sin_addr.s_addr = INADDR_ANY;
+    local.sin_port = htons(0);
+    local.sin_family = AF_INET;
+    if (bind(fd, (struct sockaddr *) &local, local_len) == -1) {
+      LOGD("bind failed: fd = %d, %s", fd, devent_errno());
       closesocket(fd);
       return NULL;
     }
+
+#ifdef WIN32
+    CreateIoCompletionPort((HANDLE) fd, docket->fd, fd, 0);
+#endif
   }
 
   DocketEvent *event = Docket_find_event(docket, fd);
@@ -166,13 +188,29 @@ DocketEvent_connect_internal(Docket *docket,
     memcpy(event->remote_address, address, socklen);
     event->remote_address_len = socklen;
     event->connected = true;
-    // TODO udp buffer
+
+#ifdef WIN32
+    // prepare for read data
+    IO_CONTEXT *io = IO_CONTEXT_new(IOCP_OP_READ, fd);
+    io->lpFlags = 0;
+
+    if (WSARecvFrom(io->socket, &io->buf, 1,
+                    NULL, &io->lpFlags, event->remote_address, &event->remote_address_len, (LPWSAOVERLAPPED) io, NULL)
+        == SOCKET_ERROR
+        && WSAGetLastError() != WSA_IO_PENDING) {
+      LOGI("WSARecv failed: %d", WSAGetLastError());
+      closesocket(io->socket);
+      DocketEvent_free(event);
+      IO_CONTEXT_free(io);
+      return NULL;
+    }
+#endif
   }
   return event;
 }
 
 static
-DocketEvent *DocketEvent_connect_hostname_internal(Docket *docket, int fd, const char *host, unsigned short port
+DocketEvent *DocketEvent_connect_hostname_internal(Docket *docket, SOCKET fd, const char *host, unsigned short port
 #ifdef DEVENT_SSL
     , bool ssl
 #endif
@@ -212,28 +250,69 @@ DocketEvent *DocketEvent_connect_hostname_internal(Docket *docket, int fd, const
   DocketEvent *event = DocketEvent_new(docket, fd, NULL);
   event->connected = false;
 
-  int dns_fd = socket(AF_INET, SOCK_DGRAM, 0);
-  if (dns_fd == -1) {
-    LOGE("create dns fd failed: %s", devent_errno());
-    return NULL;
-  }
-  devent_turn_on_flags(dns_fd, O_NONBLOCK);
-  devent_update_events(docket->fd, dns_fd, DEVENT_READ_WRITE, 0);
+  // create dns event
+  struct sockaddr *dns_server_address;
+  socklen_t dns_server_address_len;
+  Docket_get_dns_server(docket, &dns_server_address, &dns_server_address_len);
 
-  DocketDnsEvent *dns_event = DocketDnsEvent_new(docket, dns_fd, host, port);
-  dns_event->event = event;
-  event->dns_event = dns_event;
-
+  DocketEvent *dns = DocketEvent_create_udp(docket, -1, dns_server_address, dns_server_address_len);
+  DocketDnsContext *ctx = DocketDnsContext_new(event, strdup(host), port);
 #ifdef DEVENT_SSL
-  dns_event->event_ssl = ssl;
+  ctx->event_ssl = ssl;
 #endif
 
-  Docket_add_dns_event(dns_event);
+  // read dns packet
+  DocketEvent_set_read_cb(dns, on_dns_read, ctx);
+  docket_dns_write(dns);
+
+//#ifdef WIN32
+//  SOCKET dns_fd = WSASocketW(AF_INET, SOCK_DGRAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+//  if (dns_fd == INVALID_SOCKET) {
+//    LOGE("create dns fd failed: %s", devent_errno());
+//    return NULL;
+//  }
+//
+//  struct sockaddr_in local;
+//  local.sin_family = AF_INET;
+//  local.sin_addr = in4addr_any;
+//  local.sin_port = htons(0);
+//  if (bind(dns_fd, (const struct sockaddr *) &local, sizeof(local))) {
+//    LOGE("bind dns fd failed: %s", devent_errno());
+//    return NULL;
+//  }
+//  CreateIoCompletionPort((HANDLE) fd, docket->fd, fd, 0);
+//#else
+//  SOCKET dns_fd = socket(AF_INET, SOCK_DGRAM, 0);
+//  if (dns_fd == -1) {
+//    LOGE("create dns fd failed: %s", devent_errno());
+//    return NULL;
+//  }
+//  devent_turn_on_flags(dns_fd, O_NONBLOCK);
+//  devent_update_events(docket->fd, dns_fd, DEVENT_READ_WRITE, 0);
+//#endif
+
+//  DocketDnsEvent *dns_event = DocketDnsEvent_new(docket, dns_fd, host, port);
+//  dns_event->event = event;
+//  event->dns_event = dns_event;
+//
+//#ifdef DEVENT_SSL
+//  dns_event->event_ssl = ssl;
+//#endif
+//
+//  Docket_add_dns_event(dns_event);
   return event;
 }
 
-DocketEvent *DocketEvent_connect(Docket *docket, int fd, struct sockaddr *address, socklen_t socklen) {
+DocketEvent *DocketEvent_connect(Docket *docket, SOCKET fd, struct sockaddr *address, socklen_t socklen) {
   return DocketEvent_connect_internal(docket, fd, SOCK_STREAM, address, socklen
+#ifdef DEVENT_SSL
+      , false
+#endif
+  );
+}
+
+DocketEvent *DocketEvent_create_udp(Docket *docket, SOCKET fd, struct sockaddr *address, socklen_t socklen) {
+  return DocketEvent_connect_internal(docket, fd, SOCK_DGRAM, address, socklen
 #ifdef DEVENT_SSL
       , false
 #endif
@@ -254,7 +333,7 @@ DocketEvent *DocketEvent_connect_hostname_ssl(Docket *docket,
 
 #endif
 
-DocketEvent *DocketEvent_connect_hostname(Docket *docket, int fd, const char *host, unsigned short port) {
+DocketEvent *DocketEvent_connect_hostname(Docket *docket, SOCKET fd, const char *host, unsigned short port) {
   return DocketEvent_connect_hostname_internal(docket, fd, host, port
 #ifdef DEVENT_SSL
       , false
@@ -262,12 +341,15 @@ DocketEvent *DocketEvent_connect_hostname(Docket *docket, int fd, const char *ho
   );
 }
 
-DocketEvent *DocketEvent_create(Docket *docket, int fd) {
+DocketEvent *DocketEvent_create(Docket *docket, SOCKET fd) {
   DocketEvent *event = DocketEvent_new(docket, fd, NULL);
   event->connected = true;
 
+#ifdef WIN32
+#else
   devent_turn_on_flags(fd, O_NONBLOCK);
   devent_update_events(docket->fd, fd, DEVENT_READ_WRITE, 0);
+#endif
 
   Docket_add_event(event);
   return event;

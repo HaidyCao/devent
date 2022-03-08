@@ -13,7 +13,7 @@ typedef void (*c_sparse_array_value_free_cb)(void *);
 
 typedef void (*c_sparse_array_remove_before_cb)(int64_t key, void *v, void *arg);
 
-CSparseArray *CSparseArray_new();
+CSparseArray *CSparseArray_new(void);
 
 void CSparseArray_free(CSparseArray *array, c_sparse_array_value_free_cb cb);
 

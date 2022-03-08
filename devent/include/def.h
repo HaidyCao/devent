@@ -6,6 +6,9 @@
 #define DEVENT_DEF_H
 
 //#define DEVENT_MULTI_THREAD
+#ifndef WIN32
+typedef int SOCKET;
+#endif
 
 typedef struct docket_dns_event DocketDnsEvent;
 

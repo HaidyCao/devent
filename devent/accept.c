@@ -1,17 +1,58 @@
 //
 // Created by Haidy on 2021/10/31.
 //
+#include "accept.h"
+#include "log.h"
+#include "utils_internal.h"
 
+#ifdef WIN32
+#include <MSWSock.h>
+#include <WinSock2.h>
+
+#include "event.h"
+#include "event_def.h"
+
+int docket_accept(Docket *docket, SOCKET listener, SOCKET fd, IO_CONTEXT *io) {
+  DWORD dwBytes;
+  GUID GuidAcceptEx = WSAID_ACCEPTEX;
+  LPFN_ACCEPTEX lpfnAcceptEx = NULL;
+
+  {
+    int r = WSAIoctl(fd, SIO_GET_EXTENSION_FUNCTION_POINTER,
+                     &GuidAcceptEx, sizeof(GuidAcceptEx),
+                     &lpfnAcceptEx, sizeof(lpfnAcceptEx),
+                     &dwBytes, NULL, NULL);
+    if (r == SOCKET_ERROR) {
+      LOGD("accept failed: %s", devent_errno());
+      closesocket(fd);
+      return -1;
+    }
+  }
+  io->lpOutputBuffer = malloc(256);
+
+  BOOL r = lpfnAcceptEx(listener, fd, io->lpOutputBuffer, 0, io->local_len + 16, io->remote_len + 16, &dwBytes,
+                        (LPOVERLAPPED) io);
+  if (r == FALSE && WSAGetLastError() != WSA_IO_PENDING) {
+    LOGD("accept failed: %s", devent_errno());
+    closesocket(fd);
+    return -1;
+  }
+
+  DocketEvent *event = DocketEvent_new(docket, fd, NULL);
+  event->ev = DEVENT_READ_WRITE;
+
+  // create event
+  event->connected = true;
+  Docket_add_event(event);
+
+  return 0;
+}
+
+#else
 #include <errno.h>
-
-#ifndef _MSC_VER
 #include <sys/socket.h>
 #include <sys/fcntl.h>
-#else
-#include <ws2tcpip.h>
-#endif
 
-#include "log.h"
 #include "utils_internal.h"
 #include "listener_def.h"
 #include "docket.h"
@@ -67,3 +108,4 @@ int docket_accept(Docket *docket, int fd) {
 
   return 0;
 }
+#endif

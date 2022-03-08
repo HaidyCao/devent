@@ -6,10 +6,7 @@
 #include <process.h>
 #include <stdarg.h>
 #define getpid _getpid
-typedef unsigned char u_char;
-typedef unsigned short u_short;
-typedef unsigned int uint;
-typedef SSIZE_T ssize_t;
+
 #else
 #include <unistd.h>
 #endif
@@ -62,28 +59,28 @@ static void hexDump(char *buf, int len, int addr) {
 
   for (i = 0; i < len; i++) {
     if (0 == (i % 16)) {
-      sprintf(binstr, "%08x -", i + addr);
-      sprintf(binstr, "%s %02x", binstr, (unsigned char) buf[i]);
+      sprintf_s(binstr, 80, "%08x -", i + addr);
+      sprintf_s(binstr, 80, "%s %02x", binstr, (unsigned char) buf[i]);
     } else if (15 == (i % 16)) {
-      sprintf(binstr, "%s %02x", binstr, (unsigned char) buf[i]);
-      sprintf(binstr, "%s  ", binstr);
+      sprintf_s(binstr, 80, "%s %02x", binstr, (unsigned char) buf[i]);
+      sprintf_s(binstr, 80, "%s  ", binstr);
       for (j = i - 15; j <= i; j++) {
-        sprintf(binstr, "%s%c", binstr, ('!' < buf[j] && buf[j] <= '~') ? buf[j] : '.');
+        sprintf_s(binstr, 80, "%s%c", binstr, ('!' < buf[j] && buf[j] <= '~') ? buf[j] : '.');
       }
       printf("%s\n", binstr);
     } else {
-      sprintf(binstr, "%s %02x", binstr, (unsigned char) buf[i]);
+      sprintf_s(binstr, 80, "%s %02x", binstr, (unsigned char) buf[i]);
     }
   }
   if (0 != (i % 16)) {
     k = 16 - (i % 16);
     for (j = 0; j < k; j++) {
-      sprintf(binstr, "%s   ", binstr);
+      sprintf_s(binstr, 80, "%s   ", binstr);
     }
-    sprintf(binstr, "%s  ", binstr);
+    sprintf_s(binstr, 80, "%s  ", binstr);
     k = 16 - k;
     for (j = i - k; j < i; j++) {
-      sprintf(binstr, "%s%c", binstr, ('!' < buf[j] && buf[j] <= '~') ? buf[j] : '.');
+      sprintf_s(binstr, 80, "%s%c", binstr, ('!' < buf[j] && buf[j] <= '~') ? buf[j] : '.');
     }
     printf("%s\n", binstr);
   }
@@ -363,7 +360,7 @@ int c_dns_parse_a(char *data, unsigned int len, struct hostent **host) {
     }                                \
     free(domains);
 
-int c_dns_gen_inet_response(char *data, size_t len, char **resp_data, size_t *resp_len, c_dns_ipv4_cb ipv4_cb,
+int c_dns_gen_inet_response(char *data, size_t len, char **resp_data, socklen_t *resp_len, c_dns_ipv4_cb ipv4_cb,
                             c_dns_ipv6_cb ipv6_cb) {
   if (data == NULL || len < sizeof(DNSHeader)) {
     LOGD("data is null or to short");
@@ -488,7 +485,7 @@ int c_dns_gen_inet_response(char *data, size_t len, char **resp_data, size_t *re
   return 0;
 }
 
-int c_dns_parse_first_ip(struct hostent *host, struct sockaddr *addr, size_t *addr_len, int port) {
+int c_dns_parse_first_ip(struct hostent *host, struct sockaddr *addr, socklen_t *addr_len, int port) {
   if (host == NULL || addr == NULL) {
     return -1;
   }

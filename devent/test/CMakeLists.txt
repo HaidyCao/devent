@@ -19,16 +19,26 @@ if (DEVENT_SSL_ENABLE)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../dependencies/${OS}/include)
 endif ()
 
-add_executable(win_devent_test win_main.c)
+add_executable(
+        win_devent_test
+
+        win_main.c
+        echo_server_test.c
+        telnet_test.c
+)
 
 target_link_libraries(
         win_devent_test
+
+        devent
+        cdns
+        coll
 )
 
 target_link_libraries(
         devent_test
 
         devent
-        cdns-static
+        cdns
         coll
 )

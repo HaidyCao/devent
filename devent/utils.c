@@ -5,8 +5,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
-#include <fcntl.h>
 
+#ifdef WIN32
+#include <WinSock2.h>
+#endif
 #include "utils_internal.h"
 #include "event.h"
 #include "event_def.h"
@@ -14,13 +16,20 @@
 #include "docket.h"
 #include "docket_def.h"
 #include "listener_def.h"
-#include "win_def.h"
+
 
 char *devent_errno() {
   static char msg[1024];
   bzero(&msg, sizeof(msg));
 #ifdef WIN32
-  sprintf(msg, "lastError = %lu, WSALastError = %d", GetLastError(), WSAGetLastError());
+  FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                NULL,
+                WSAGetLastError(),
+                MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                msg,
+                sizeof(msg),
+                NULL);
+  sprintf(msg, "lastError = %d, WSALastError = %s", WSAGetLastError(), msg);
 #else
   sprintf(msg, "errno = %d, errmsg: %s", errno, strerror(errno));
 #endif
@@ -113,7 +122,7 @@ bool errno_is_EAGAIN(int eno) {
 
 #ifndef __APPLE__
   if (eno == EWOULDBLOCK) {
-      return true;
+    return true;
   }
 #endif
   return false;

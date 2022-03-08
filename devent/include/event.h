@@ -13,6 +13,7 @@
 
 #include "buffer.h"
 #include "def.h"
+#include "../win_def.h"
 
 #define DEVENT_NONE 0
 #define DEVENT_READ 1
@@ -42,8 +43,6 @@ typedef void (*docket_event_write_callback)(DocketEvent *ev, void *ctx);
 DocketEvent *DocketEvent_new(Docket *docket, SOCKET fd, void *ctx);
 
 Docket *DocketEvent_getDocket(DocketEvent *event);
-
-int DocketEvent_getFD(DocketEvent *event);
 
 DocketBuffer *DocketEvent_get_in_buffer(DocketEvent *event);
 

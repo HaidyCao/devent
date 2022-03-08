@@ -6,9 +6,7 @@
 #define DOCKET_EVENT_DEF_H
 
 #include <stdbool.h>
-#ifndef _MSC_VER
-#include <sys/socket.h>
-#endif
+#include "docket_def.h"
 
 #ifdef DEVENT_SSL
 #include "openssl/ssl.h"
@@ -19,7 +17,7 @@
 struct docket_event {
   Docket *docket;
 
-  int fd;
+  SOCKET fd;
 
   /**
    * for udp

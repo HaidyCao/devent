@@ -13,7 +13,7 @@
 
 typedef struct c_hash_set CHashSet;
 
-CHashSet *CHashSet_new();
+CHashSet *CHashSet_new(void);
 
 void CHashSet_free(CHashSet *set);
 

@@ -107,7 +107,7 @@ static int test_custom_ip() {
   }
 
   char *resp_data = NULL;
-  size_t resp_len = 0;
+  socklen_t resp_len = 0;
   if (c_dns_gen_inet_response(data, pl, &resp_data, &resp_len, test_ipv4_cb, test_ipv6_cb) == -1) {
     LOGD("c_dns_gen_inet_response failed");
     return -1;

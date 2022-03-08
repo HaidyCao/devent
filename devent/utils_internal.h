@@ -5,7 +5,11 @@
 #ifndef DOCKET_DEVENT_UTILS_INTERNAL_H
 #define DOCKET_DEVENT_UTILS_INTERNAL_H
 
+#ifdef WIN32
+#include <winnt.h>
+#endif
 #include "utils.h"
+#include "def.h"
 
 /**
  * socket add flags
@@ -22,8 +26,6 @@ int devent_update_events(
     int dfd,
 #endif
     SOCKET fd, int events, int mod);
-
-#include "event.h"
 
 void devent_close_internal(DocketEvent *event, int what);
 

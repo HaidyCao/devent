@@ -25,15 +25,13 @@
 
 #ifdef WIN32
 void docket_on_handle_read_data(IO_CONTEXT *io, DWORD size, DocketEvent *event) {
-  if (size == 0) return;
-
   if (!devent_do_ssl_handshake(event)) {
     return;
   }
 
   // TODO SSL
 
-  DocketBuffer_write(event->in_buffer, io->recvBuf.buf, size);
+  DocketBuffer_write(event->in_buffer, io->buf.buf, size);
   if (devent_read_enable(event) && event->read_cb) {
     event->read_cb(event, event->ctx);
   }

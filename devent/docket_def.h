@@ -7,8 +7,9 @@
 
 #ifndef WIN32
 #include <sys/socket.h>
-typedef int SOCKET;
 #else
+#include <WS2tcpip.h>
+
 #define IOCP_OP_ACCEPT 0
 #define IOCP_OP_READ 1
 #define IOCP_OP_WRITE 2
@@ -19,8 +20,8 @@ typedef struct {
   int op;
   SOCKET socket;
 
-  char lpOutputBuffer[256];
-  WSABUF recvBuf;
+  char *lpOutputBuffer;
+  WSABUF buf;
   DWORD lpFlags;
   struct sockaddr *local;
   int local_len;

@@ -21,7 +21,7 @@ struct node {
 
 static inline Node *Node_new(char *data) {
     Node *n = malloc(sizeof(Node));
-    n->key = strdup(data);
+    n->key = _strdup(data);
     n->next = NULL;
     n->moved = false;
 

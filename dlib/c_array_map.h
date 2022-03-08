@@ -11,8 +11,8 @@
 #include "c_hash.h"
 #include "c_free.h"
 
-#if defined(_MSC_VER)
-#include <BaseTsd.h>
+#ifdef WIN32
+#include <basetsd.h>
 typedef SSIZE_T ssize_t;
 #endif
 
@@ -22,7 +22,7 @@ typedef struct c_array_map CArrayMap;
  * new CArrayMap
  * @return
  */
-CArrayMap *CArrayMap_new();
+CArrayMap *CArrayMap_new(void);
 
 /**
  * free CArrayMap

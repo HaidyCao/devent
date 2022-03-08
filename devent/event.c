@@ -2,10 +2,14 @@
 // Created by Haidy on 2021/9/25.
 //
 #include <stdlib.h>
+#include <stdbool.h>
+#ifdef WIN32
+
+#else
 #include <unistd.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#include <stdbool.h>
+#endif
 
 #include "event.h"
 #include "buffer.h"
@@ -41,12 +45,6 @@ Docket *DocketEvent_getDocket(DocketEvent *event) {
   if (event)
     return event->docket;
   return NULL;
-}
-
-int DocketEvent_getFD(DocketEvent *event) {
-  if (event)
-    return event->fd;
-  return -1;
 }
 
 DocketBuffer *DocketEvent_get_in_buffer(DocketEvent *event) {
@@ -101,7 +99,7 @@ void DocketEvent_write(DocketEvent *event, const char *data, size_t len) {
   DocketBuffer_write(out_buffer, data, len);
 
   if (devent_write_enable(event)) {
-    devent_write_data(event, out_buffer, NULL, 0);
+    devent_write_data(event, out_buffer);
   }
 }
 
@@ -111,7 +109,7 @@ void DocketEvent_write_buffer(DocketEvent *event, DocketBuffer *buffer) {
     return;
   }
   DocketBuffer_moveto(out_buffer, buffer);
-  devent_write_data(event, out_buffer, NULL, 0);
+  devent_write_data(event, out_buffer);
 }
 
 void DocketEvent_write_buffer_force(DocketEvent *event, DocketBuffer *buffer) {
@@ -123,7 +121,7 @@ void DocketEvent_write_buffer_force(DocketEvent *event, DocketBuffer *buffer) {
 
   int ev = event->ev;
   set_write_enable(event);
-  devent_write_data(event, out_buffer, NULL, 0);
+  devent_write_data(event, out_buffer);
   event->ev = ev;
 }
 
@@ -186,8 +184,13 @@ void DocketEvent_free(DocketEvent *event) {
     devent_update_events(event->docket->fd, event->fd, event->ev, 1);
     Docket_remove_event(event);
 
+#ifdef WIN32
+    closesocket(event->fd);
+    event->fd = INVALID_SOCKET;
+#else
     close(event->fd);
     event->fd = 0;
+#endif
   }
   event->docket = NULL;
 

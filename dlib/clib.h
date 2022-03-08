@@ -5,9 +5,7 @@
 #include <sys/socket.h>
 #else
 #include <WS2tcpip.h>
-typedef unsigned int uint;
-typedef __int16 u_int16_t;
-typedef __int32 uint32_t;
+#include <stdint.h>
 
 #endif
 
@@ -48,7 +46,7 @@ int addr_in6_to_addr_in(struct sockaddr_in6 *addr_in6, struct sockaddr_in *addr_
 
 int ipv4_to_int(char ip[4]);
 
-char *ipv6_to_string(char ip[16]);
+char *ipv6_to_string(const char ip[16]);
 
 int port_to_int(char p[2]);
 
@@ -56,7 +54,7 @@ void n_write_u_short_to_data(char *data, u_short v, size_t offset);
 
 void n_write_uint32_t_to_data(char *data, uint32_t v, size_t offset);
 
-u_int16_t ntohs_by_data(char *data, size_t offset);
+uint16_t ntohs_by_data(char *data, size_t offset);
 
 int str_is_ipv4(const char *str);
 

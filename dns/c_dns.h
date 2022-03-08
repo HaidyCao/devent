@@ -6,6 +6,13 @@
 #include <netdb.h>
 #endif
 #include <sys/types.h>
+#ifdef WIN32
+#include <basetsd.h>
+typedef unsigned char u_char;
+typedef unsigned short u_short;
+typedef unsigned int uint;
+typedef SSIZE_T ssize_t;
+#endif
 
 #define C_DNS_QTYPE_A 1
 #define C_DNS_QTYPE_NS 2
@@ -38,14 +45,14 @@
 ssize_t c_dns_pack(char *domain, char *buf, size_t buf_len, u_short type);
 void c_dns_free_hostent(struct hostent *host);
 int c_dns_parse_a(char *data, unsigned int len, struct hostent **host);
-int c_dns_parse_first_ip(struct hostent *host, struct sockaddr *addr, size_t *addr_len, int port);
+int c_dns_parse_first_ip(struct hostent *host, struct sockaddr *addr, socklen_t *addr_len, int port);
 
 typedef int (*c_dns_ipv4_cb)(char *domain, struct in_addr *ip);
 typedef int (*c_dns_ipv6_cb)(char *domain, struct in6_addr *ip);
 int c_dns_gen_inet_response(char *data,
                             size_t len,
                             char **resp_data,
-                            size_t *resp_len,
+                            socklen_t *resp_len,
                             c_dns_ipv4_cb ipv4_cb,
                             c_dns_ipv6_cb ipv6_cb);
 

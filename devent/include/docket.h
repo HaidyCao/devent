@@ -5,6 +5,10 @@
 #ifndef DOCKET_DOCKET_H
 #define DOCKET_DOCKET_H
 
+#ifdef WIN32
+#include <WinSock2.h>
+#include <WS2tcpip.h>
+#endif
 #include "def.h"
 
 /**
@@ -30,10 +34,10 @@ int Docket_set_dns_server(Docket *docket, char *server);
 /**
  * get listener of fd
  * @param docket docket
- * @param listener_fd fd
+ * @param fd fd
  * @return listener
  */
-DocketListener *Docket_get_listener(Docket *docket, int listener_fd);
+DocketListener *Docket_get_listener(Docket *docket, SOCKET fd);
 
 /**
  * find event from docket
@@ -67,10 +71,12 @@ void Docket_remove_dns_event(DocketDnsEvent *event);
  */
 void Docket_remove_event(DocketEvent *event);
 
+int Docket_get_dns_server(Docket *docket, struct sockaddr **address, socklen_t *address_len);
+
 /**
  * Docket will loop if no error
  * @return -1 loop finished
  */
-int Docket_loop(Docket *docket);
+void Docket_loop(Docket *docket);
 
 #endif //DOCKET_DOCKET_H

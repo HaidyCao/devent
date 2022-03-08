@@ -6,19 +6,32 @@
 #define DOCKET_CONNECT_H
 
 #include <stdbool.h>
+#ifdef WIN32
+#include <WinSock2.h>
+#include <WS2tcpip.h>
+#endif
 
 #include "event.h"
 
 /**
- * connect to hostname
+ * connect to address
  * @param docket docket
  * @param fd -1 or fd
- * @param host domain or ip address of ipv4 or ipv6
- * @param port port
- * @param ssl  use ssl
+ * @param address address
+ * @param socklen address len
  * @return event
  */
-DocketEvent *DocketEvent_connect(Docket *docket, int fd, struct sockaddr *address, socklen_t socklen);
+DocketEvent *DocketEvent_connect(Docket *docket, SOCKET fd, struct sockaddr *address, socklen_t socklen);
+
+/**
+ * connect to hostname
+ * @param docket docket
+ * @param address address
+ * @param socklen address len
+ * @param fd -1 or fd
+ * @return event
+ */
+DocketEvent *DocketEvent_create_udp(Docket *docket, SOCKET fd, struct sockaddr *address, socklen_t socklen);
 
 /**
  * crate a event from fd
@@ -26,7 +39,7 @@ DocketEvent *DocketEvent_connect(Docket *docket, int fd, struct sockaddr *addres
  * @param fd        fd
  * @return event
  */
-DocketEvent *DocketEvent_create(Docket *docket, int fd);
+DocketEvent *DocketEvent_create(Docket *docket, SOCKET fd);
 
 /**
  * connect remote by hostname and port
@@ -36,7 +49,7 @@ DocketEvent *DocketEvent_create(Docket *docket, int fd);
  * @param port      remote port
  * @return event
  */
-DocketEvent *DocketEvent_connect_hostname(Docket *docket, int fd, const char *host, unsigned short port);
+DocketEvent *DocketEvent_connect_hostname(Docket *docket, SOCKET fd, const char *host, unsigned short port);
 
 #ifdef DEVENT_SSL
 

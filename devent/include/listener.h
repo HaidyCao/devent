@@ -5,8 +5,10 @@
 #ifndef DOCKET_LISTENER_H
 #define DOCKET_LISTENER_H
 
-#ifndef _MSC_VER
+#ifndef WIN32
 #include <sys/socket.h>
+#else
+#include <WS2tcpip.h>
 #endif
 
 #include "def.h"
@@ -21,7 +23,7 @@
 
 #endif
 
-typedef void (*docket_connect_cb)(DocketListener *l, int fd,
+typedef void (*docket_connect_cb)(DocketListener *l, SOCKET fd,
                                   struct sockaddr *address,
                                   socklen_t address_len, DocketEvent *event,
                                   void *ctx);

@@ -6,11 +6,12 @@
 #define DEVENT_BUFFER_H
 
 #include <stdlib.h>
-#ifndef _MSC_VER
-#include <sys/unistd.h>
-#include <sys/socket.h>
+#ifdef WIN32
+#include <WinSock2.h>
+#include <WS2tcpip.h>
 #endif
 
+#include "../win_def.h"
 #include "def.h"
 #include "c_linked_list.h"
 

@@ -37,8 +37,6 @@ add_definitions("-D_GNU_SOURCE -D__USE_MISC")
 add_library( # Sets the name of the library.
         coll
 
-        ${CMAKE_CURRENT_SOURCE_DIR}/log.c
-
         c_hash.c
         c_hash_set.c
         c_array_map.c
@@ -46,7 +44,6 @@ add_library( # Sets the name of the library.
         clib.c
         c_linked_list.c
         c_hash_map.c
-        
         c_array_list.c)
 
 add_executable(

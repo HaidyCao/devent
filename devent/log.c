@@ -2,23 +2,19 @@
 // Created by Haidy on 2021/10/31.
 //
 
-#include <stdio.h>
-#include <stdarg.h>
-#include <time.h>
-
 #ifdef WIN32
-#include <sysinfoapi.h>
+#include <WinSock2.h>
 #else
+#include <stdio.h>
 #include <sys/time.h>
 #endif
+#include <time.h>
+#include <stdarg.h>
+
+#include "log.h"
 
 #ifdef WIN32
 typedef long int suseconds_t;
-
-struct timeval {
-  time_t tv_sec;
-  suseconds_t tv_usec;
-};
 
 static int gettimeofday(struct timeval *tp, void *tzp) {
   time_t clock;
@@ -46,8 +42,6 @@ const char *basename(const char *path) {
   return name;
 }
 #endif
-
-#include "log.h"
 
 static int s_log_level = DEVENT_LOG_DEBUG;
 

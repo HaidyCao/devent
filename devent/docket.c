@@ -35,29 +35,35 @@
 #include "event.h"
 #include "event_def.h"
 #include "clib.h"
+#include "utils.h"
 
 #ifdef WIN32
 #define RECV_BUF_SIZE 4096
 
+#ifdef WIN32
+#include <iphlpapi.h>
+
+#pragma comment(lib, "IPHLPAPI.lib")
+#endif
+
 IO_CONTEXT *IO_CONTEXT_new(int op, SOCKET socket) {
-    IO_CONTEXT *ctx = calloc(1, sizeof(IO_CONTEXT));
-    ctx->op = op;
-    ctx->socket = socket;
-    if (ctx->op == IOCP_OP_READ) {
-        ctx->recvBuf.len = RECV_BUF_SIZE;
-        ctx->recvBuf.buf = malloc(RECV_BUF_SIZE);
-    } else {
-        ctx->recvBuf.buf = NULL;
-    }
+  IO_CONTEXT *ctx = calloc(1, sizeof(IO_CONTEXT));
+  ctx->op = op;
+  ctx->socket = socket;
+  if (ctx->op == IOCP_OP_READ) {
+    ctx->buf.len = RECV_BUF_SIZE;
+    ctx->buf.buf = malloc(RECV_BUF_SIZE);
+  } else {
+    ctx->buf.buf = NULL;
+  }
+  return ctx;
 }
 
 void IO_CONTEXT_free(IO_CONTEXT *ctx) {
   if (ctx == NULL) return;
 
-  free(ctx->local);
-  free(ctx->remote);
-
-  free(ctx->recvBuf.buf);
+  free(ctx->buf.buf);
+  free(ctx->lpOutputBuffer);
 
   free(ctx);
 }
@@ -65,6 +71,13 @@ void IO_CONTEXT_free(IO_CONTEXT *ctx) {
 #endif
 
 Docket *Docket_new() {
+  WSADATA lpWsaData;
+  int startUpResult = WSAStartup(WINSOCK_VERSION, (LPWSADATA) &lpWsaData);
+  if (startUpResult != 0) {
+    LOGD("WSAStartup failed: %s", devent_errno());
+    return NULL;
+  }
+
   Docket *docket = calloc(1, sizeof(Docket));
 #ifdef __APPLE__
   docket->fd = kqueue();
@@ -131,13 +144,13 @@ void Docket_add_listener(Docket *docket, DocketListener *listener) {
   CSparseArray_put(docket->listeners, listener->fd, listener);
 }
 
-DocketListener *Docket_get_listener(Docket *docket, int listener_fd) {
+DocketListener *Docket_get_listener(Docket *docket, SOCKET fd) {
   if (docket == NULL) {
     LOGE("docket is NULL");
     return NULL;
   }
 
-  return CSparseArray_get(docket->listeners, listener_fd);
+  return CSparseArray_get(docket->listeners, fd);
 }
 
 void Docket_add_event(DocketEvent *event) {
@@ -164,4 +177,75 @@ DocketEvent *Docket_find_event(Docket *docket, SOCKET fd) {
   if (docket == NULL)
     return NULL;
   return CSparseArray_get(docket->events, fd);
+}
+
+int Docket_get_dns_server(Docket *docket, struct sockaddr **address, socklen_t *address_len) {
+  SOCK_ADDRESS dns_address = docket->dns_server.address;
+  socklen_t socklen = docket->dns_server.socklen;
+  // init dns name server
+  if (dns_address == NULL) {
+#ifdef WIN32
+    ULONG buf_len = sizeof(FIXED_INFO);
+    FIXED_INFO *fixed_info = malloc(sizeof(FIXED_INFO));
+
+    DWORD res = GetNetworkParams(fixed_info, &buf_len);
+    if (res == ERROR_BUFFER_OVERFLOW) {
+      fixed_info = malloc(buf_len);
+      if (fixed_info == NULL) {
+        LOGE("malloc fixed_info failed");
+        return -1;
+      }
+      res = GetNetworkParams(fixed_info, &buf_len);
+    }
+
+    if (res == NO_ERROR) {
+      socklen = sizeof(struct sockaddr_in);
+      dns_address = malloc(sizeof(struct sockaddr_in));
+      dns_address->sa_family = AF_INET;
+      ((struct sockaddr_in *) dns_address)->sin_port = htons(53);
+      if (fixed_info->CurrentDnsServer) {
+        if (inet_pton(AF_INET,
+                      fixed_info->CurrentDnsServer->IpAddress.String,
+                      &((struct sockaddr_in *) dns_address)->sin_addr) == 1) {
+          docket->dns_server.address = dns_address;
+          docket->dns_server.socklen = socklen;
+        } else {
+          // TODO default dns server
+        }
+      } else {
+        if (inet_pton(AF_INET,
+                      fixed_info->DnsServerList.IpAddress.String,
+                      &((struct sockaddr_in *) dns_address)->sin_addr) == 1) {
+          docket->dns_server.address = dns_address;
+          docket->dns_server.socklen = socklen;
+        } else {
+          // TODO default dns server
+        }
+      }
+
+      LOGD("dns_address: %s", sockaddr_to_string(dns_address, NULL, 0));
+    }
+#else
+    struct __res_state state;
+    res_ninit(&state);
+
+    if (state.nscount > 0) {
+      size_t len = sizeof(state.nsaddr_list[0]);
+      dns_address = malloc(len);
+      memcpy(dns_address, &state.nsaddr_list[0], len);
+      docket->dns_server.address = dns_address;
+      docket->dns_server.socklen = len;
+    }
+
+    res_nclose(&state);
+        if (dns_address == NULL) {
+      LOGE("dns server is null");
+      return -1;
+    }
+#endif
+  }
+  *address = dns_address;
+  *address_len = socklen;
+
+  return 0;
 }

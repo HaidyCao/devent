@@ -25,7 +25,7 @@ struct c_array_map {
     c_hash_func hash;
 };
 
-CArrayMap *CArrayMap_new() {
+CArrayMap *CArrayMap_new(void) {
     CArrayMap *map = calloc(1, sizeof(CArrayMap));
     map->cap = C_ARRAY_MAP_DEFAULT_CAP;
     map->nodes = malloc(map->cap * sizeof(Node));
