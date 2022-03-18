@@ -14,7 +14,7 @@ add_executable(devent_test main.c utils_test.c utils_test.h echo_server_test.c e
 
 if (DEVENT_SSL_ENABLE)
     add_definitions("-DDEVENT_SSL")
-    message("Devent ssl is enable")
+    message("Devent.test ssl is enable")
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../dependencies/${OS}/include)
 endif ()
@@ -25,6 +25,7 @@ add_executable(
         win_main.c
         echo_server_test.c
         telnet_test.c
+        ssl_telnet_test.c
 )
 
 target_link_libraries(
@@ -33,6 +34,7 @@ target_link_libraries(
         devent
         cdns
         coll
+        Crypt32
 )
 
 target_link_libraries(
@@ -41,4 +43,5 @@ target_link_libraries(
         devent
         cdns
         coll
+        Crypt32
 )

@@ -13,6 +13,7 @@ add_library(devent
         dns.h
         read.c
         event.c
+        event_ssl.c
         utils.c
         log.c
         accept.c
@@ -24,6 +25,14 @@ add_library(devent
 
 add_subdirectory(test)
 
+if (WIN32)
+    set(LIB_SSL "libssl.lib")
+    set(LIB_CRYPTO "libcrypto.lib")
+else (WIN32)
+    set(LIB_SSL "libssl.a")
+    set(LIB_CRYPTO "libcrypto.a")
+endif ()
+
 if (DEVENT_SSL_ENABLE)
     add_definitions("-DDEVENT_SSL")
     message("Devent ssl is enable")
@@ -32,7 +41,7 @@ if (DEVENT_SSL_ENABLE)
 
     find_library(
             OPENSSL_SSL
-            libssl.a
+            ${LIB_SSL}
 
             ${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/${OS}/lib/
             ${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/${OS}/bin/
@@ -40,7 +49,7 @@ if (DEVENT_SSL_ENABLE)
 
     find_library(
             OPENSSL_CRYPTO
-            libcrypto.a
+            ${LIB_CRYPTO}
 
             ${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/${OS}/lib/
             ${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/${OS}/bin/

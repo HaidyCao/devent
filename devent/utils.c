@@ -17,7 +17,6 @@
 #include "docket_def.h"
 #include "listener_def.h"
 
-
 char *devent_errno() {
   static char msg[1024];
   bzero(&msg, sizeof(msg));
@@ -102,7 +101,7 @@ int devent_update_events(
 void devent_close_internal(DocketEvent *event, int what) {
   LOGD("devent_close: event fd = %d, what = %d", event->fd, what);
   Docket *docket = event->docket;
-  int fd = event->fd;
+  SOCKET fd = event->fd;
 
   event->ev = DEVENT_NONE;
   if (event->event_cb) {
@@ -154,31 +153,35 @@ bool devent_parse_ipv4(const char *ip, unsigned char *result) {
 
 bool devent_do_ssl_handshake(DocketEvent *event) {
   // TODO SSL on windows
-#ifdef DEVENT_SSL
-  if (event->ssl && event->ssl_handshaking) {
-    int r = SSL_do_handshake(event->ssl);
-    if (r != 1) {
-      int err = SSL_get_error(event->ssl, r);
-      if (err != SSL_ERROR_WANT_READ && err != SSL_ERROR_WANT_WRITE) {
-        LOGE("SSL error: %s", ERR_error_string(err, NULL));
-        devent_close_internal(event, DEVENT_CONNECT | DEVENT_ERROR | DEVENT_OPENSSL);
-      }
-      return false;
-    }
-    event->ssl_handshaking = false;
-
-    if (event->listener && event->listener->cb) {
-      struct sockaddr_storage address;
-      socklen_t socklen = sizeof(address);
-      getpeername(event->fd, (struct sockaddr *) &address, &socklen);
-      event->listener->cb(event->listener,
-                          event->fd,
-                          (struct sockaddr *) &address,
-                          socklen,
-                          event,
-                          event->listener->ctx);
-    }
-  }
-#endif
+//#ifdef DEVENT_SSL
+//  if (event->ssl && event->ssl_handshaking) {
+//#ifdef WIN32
+//
+//#else
+//    int r = SSL_do_handshake(event->ssl);
+//    if (r != 1) {
+//      int err = SSL_get_error(event->ssl, r);
+//      if (err != SSL_ERROR_WANT_READ && err != SSL_ERROR_WANT_WRITE) {
+//        LOGE("SSL error: %s", ERR_error_string(err, NULL));
+//        devent_close_internal(event, DEVENT_CONNECT | DEVENT_ERROR | DEVENT_OPENSSL);
+//      }
+//      return false;
+//    }
+//#endif
+//    event->ssl_handshaking = false;
+//
+//    if (event->listener && event->listener->cb) {
+//      struct sockaddr_storage address;
+//      socklen_t socklen = sizeof(address);
+//      getpeername(event->fd, (struct sockaddr *) &address, &socklen);
+//      event->listener->cb(event->listener,
+//                          event->fd,
+//                          (struct sockaddr *) &address,
+//                          socklen,
+//                          event,
+//                          event->listener->ctx);
+//    }
+//  }
+//#endif
   return true;
 }

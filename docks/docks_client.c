@@ -128,8 +128,7 @@ static void docks_connect_cb(DocketListener *l, int fd,
   server_config->bind_type = SOCKS5_ATYPE_IPV4;
 
   server_config->bind_address = malloc(IPV4_LEN);
-  in_addr_t ip = inet_addr("127.0.0.1");
-  n_write_uint32_t_to_data(server_config->bind_address, ntohl(ip), 0);
+  n_write_uint32_t_to_data(server_config->bind_address, INADDR_LOOPBACK, 0);
   server_config->bind_address_length = IPV4_LEN;
 
   LOGD("on connect: fd = %d, address = %s", fd, sockaddr_to_string(address, NULL, 0));

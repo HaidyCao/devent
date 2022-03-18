@@ -16,13 +16,14 @@
 #include <pthread.h>
 #endif
 
-#include "docket_def.h"
 #include "def.h"
+#include "docket_def.h"
+#include "event.h"
+#include "event_def.h"
 #include "buffer_def.h"
 #include "c_linked_list.h"
 #include "win_def.h"
-
-#define MAX_POOL_SIZE 1024
+#include "log.h"
 
 struct docket_buffer {
   /**
@@ -50,12 +51,6 @@ struct docket_buffer {
 
 #endif
 
-typedef struct buffer {
-  size_t len;
-  size_t pos;
-  char data[DEVENT_BUFFER_SIZE];
-} Buffer;
-
 static CLinkedList *buffer_pool = NULL;
 
 static Buffer *get_buffer_from_pool() {
@@ -80,6 +75,14 @@ static void buffer_release(Buffer *buffer) {
   } else {
     free(buffer);
   }
+}
+
+Buffer *Docket_buffer_alloc() {
+  return get_buffer_from_pool();
+}
+
+void Docket_buffer_release(Buffer *buffer) {
+  buffer_release(buffer);
 }
 
 DocketBuffer *DocketBuffer_new() {
@@ -269,53 +272,47 @@ int DocketBuffer_win_send(IO_CONTEXT *io, int flags, struct sockaddr *address, s
 }
 #endif
 
-ssize_t DocketBuffer_send(DocketBuffer *buffer, SOCKET fd, int flags, struct sockaddr *address, socklen_t socklen
-#ifdef DEVENT_SSL
-    , SSL *ssl
-#endif
-) {
+ssize_t DocketBuffer_send(DocketEvent *event, SOCKET fd, int flags, DocketBuffer *buffer) {
   Buffer *head = NULL;
   LOCK(buffer, {
     head = c_linked_list_get_header(buffer->list);
   })
 
   ssize_t wr;
-#ifdef DEVENT_SSL
-  if (ssl) {
-      wr = SSL_write(ssl, head->data + head->pos, (int) head->len);
-  } else
-#endif
-
 #ifdef WIN32
-  {
-    IO_CONTEXT *io = IO_CONTEXT_new(IOCP_OP_WRITE, fd);
-    io->buf.buf = malloc(head->len);
-    io->buf.len = head->len;
-    memcpy(io->buf.buf, head->data + head->pos, head->len);
+  IO_CONTEXT *io = IO_CONTEXT_new(IOCP_OP_WRITE, fd);
 
-    if (DocketBuffer_win_send(io, flags, address, socklen) != 0) {
-      int lastError = WSAGetLastError();
-      if (lastError != WSA_IO_PENDING) {
-        IO_CONTEXT_free(io);
-        return -1;
-      }
+  io->buf.buf = malloc(head->len);
+  io->buf.len = head->len;
+  memcpy(io->buf.buf, head->data + head->pos, head->len);
+  wr = (ssize_t) head->len;
+
+  if (DocketBuffer_win_send(io, flags, event->remote_address, event->remote_address_len) != 0) {
+    int lastError = WSAGetLastError();
+    if (lastError != WSA_IO_PENDING) {
+      IO_CONTEXT_free(io);
+      return -1;
     }
-    wr = (ssize_t) head->len;
   }
 #else
-  if (address) {
-      wr = sendto(fd, head->data + head->pos, head->len, flags, address, socklen);
-  } else {
-      wr = send(fd, head->data + head->pos, head->len, flags);
-  }
+#ifdef DEVENT_SSL
+    if (event->ssl) {
+        wr = SSL_write(event->ssl, head->data + head->pos, (int) head->len);
+    } else
+#endif
+    if (address) {
+        wr = sendto(event->fd, head->data + head->pos, head->len, flags, event->remote_address, event->remote_address_len);
+    } else {
+        wr = send(event->fd, head->data + head->pos, head->len, flags);
+    }
 
-  if (wr == -1 && errno == ENOTSOCK) {
-      wr = write(fd, head->data + head->pos, head->len);
-  }
+    if (wr == -1 && errno == ENOTSOCK) {
+        wr = write(event->fd, head->data + head->pos, head->len);
+    }
 
-  if (wr == -1 || wr == 0) {
-      return -1;
-  }
+    if (wr == -1 || wr == 0) {
+        return -1;
+    }
 #endif
 
   LOCK(buffer, {

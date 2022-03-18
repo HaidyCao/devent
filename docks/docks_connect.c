@@ -1,9 +1,13 @@
 //
 // Created by Haidy on 2021/11/7.
 //
+#ifdef WIN32
+
+#else
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#endif
 
 #include "connect.h"
 #include "docks_connect.h"
@@ -12,7 +16,6 @@
 #include "log.h"
 #include "clib.h"
 #include "remote.h"
-#include "c_hex_utils.h"
 #include "transfer.h"
 
 #define SOCKS5_REPLY_SUCCEEDED (char)0x00
@@ -54,6 +57,49 @@ static void on_connected_write(DocketEvent *event, void *ctx) {
     DocketEvent_set_cb(remote->event, docket_remote_read, NULL, docket_remote_disconnect_event, remote);
   }
 }
+
+static void hexDump(char *buf, int len, int addr) {
+  int i, j, k;
+  char binstr[80];
+
+  for (i = 0; i < len; i++) {
+    if (0 == (i % 16)) {
+      sprintf_s(binstr, 80, "%08x -", i + addr);
+      sprintf_s(binstr, 80, "%s %02x", binstr, (unsigned char) buf[i]);
+    } else if (15 == (i % 16)) {
+      sprintf_s(binstr, 80, "%s %02x", binstr, (unsigned char) buf[i]);
+      sprintf_s(binstr, 80, "%s  ", binstr);
+      for (j = i - 15; j <= i; j++) {
+        sprintf_s(binstr, 80, "%s%c", binstr, ('!' < buf[j] && buf[j] <= '~') ? buf[j] : '.');
+      }
+      printf("%s\n", binstr);
+    } else {
+      sprintf_s(binstr, 80, "%s %02x", binstr, (unsigned char) buf[i]);
+    }
+  }
+  if (0 != (i % 16)) {
+    k = 16 - (i % 16);
+    for (j = 0; j < k; j++) {
+      sprintf_s(binstr, 80, "%s   ", binstr);
+    }
+    sprintf_s(binstr, 80, "%s  ", binstr);
+    k = 16 - k;
+    for (j = i - k; j < i; j++) {
+      sprintf_s(binstr, 80, "%s%c", binstr, ('!' < buf[j] && buf[j] <= '~') ? buf[j] : '.');
+    }
+    printf("%s\n", binstr);
+  }
+}
+
+#ifdef WIN32
+static char* strndup(char *src, unsigned int len) {
+  char *str = malloc(len + 1);
+  memcpy(str, src, len);
+  str[len] = '\0';
+  return str;
+}
+
+#endif
 
 static void send_client_auth_response(DocketEvent *event, RemoteContext *remote) {
   ServerContext *server = remote->server;
@@ -351,14 +397,16 @@ static void on_read_server_bind_host(DocketEvent *event, void *ctx) {
 
   if (atype[0] == SOCKS5_ATYPE_IPV4) {
     size_t data_len = 1 + IPV4_LEN;
-    char data[data_len];
+    char *data = malloc(data_len);
     if (DocketEvent_read_full(event, data, data_len) != data_len) {
       LOGD("need read more data");
+      free(data);
       return;
     }
 
     struct sockaddr_in address_in;
     memcpy(&address_in.sin_addr, data + 1, IPV4_LEN);
+    free(data);
     char *ip_str = inet_ntoa(address_in.sin_addr);
     if (ip_str == NULL) {
       DocketEvent_free(event);
@@ -368,7 +416,7 @@ static void on_read_server_bind_host(DocketEvent *event, void *ctx) {
     client_context->bind_host = strdup(ip_str);
   } else if (atype[0] == SOCKS5_ATYPE_IPV6) {
     size_t data_len = 1 + IPV6_LEN;
-    char data[data_len];
+    char data[1 + IPV6_LEN];
 
     if (DocketEvent_read_full(event, data, data_len) != data_len) {
       LOGD("need read more data");
@@ -390,12 +438,14 @@ static void on_read_server_bind_host(DocketEvent *event, void *ctx) {
       return;
     }
 
-    char domain[2 + header[1]];
+    char *domain = malloc(2 + header[1]);
     if (DocketEvent_read_full(event, domain, sizeof(domain)) != sizeof(domain)) {
       LOGD("need read more data");
+      free(domain);
       return;
     }
     client_context->bind_host = strndup(domain + 2, header[1]);
+    free(domain);
   } else {
     DocketEvent_free(event);
     ClientContext_free(ctx);

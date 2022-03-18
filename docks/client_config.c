@@ -7,13 +7,23 @@
 #include "def.h"
 #include "clib.h"
 
-#include <getopt.h>
+#include "../getopt.h"
 #include <stdio.h>
 #include <string.h>
+#ifndef WIN32
 #include <sys/socket.h>
+#endif
 
 #define VAL_SSL_KEY_PATH 1
 #define VAL_SSL_CERT_PATH 2
+
+#ifdef WIN32
+
+static int strcasecmp(char *str1, char *str2) {
+  return _stricmp(str1, str2);
+}
+
+#endif
 
 static const struct option long_options[] = {
     {"address", required_argument, NULL, 'a'},

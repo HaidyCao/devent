@@ -24,6 +24,7 @@
 #define DEVENT_EOF 16
 #define DEVENT_OPENSSL 32
 
+#define DEVENT_CONNECT_SSL DEVENT_CONNECT | DEVENT_OPENSSL
 #define DEVENT_READ_EOF DEVENT_READ | DEVENT_EOF
 
 #define DEVENT_IS_ERROR_OR_EOF(what) ((what & DEVENT_ERROR) || (what & DEVENT_EOF))
@@ -36,6 +37,14 @@ typedef void (*docket_event_callback)(DocketEvent *ev, int what, void *ctx);
 typedef void (*docket_event_read_callback)(DocketEvent *ev, void *ctx);
 
 typedef void (*docket_event_write_callback)(DocketEvent *ev, void *ctx);
+
+#ifdef DEVENT_SSL
+typedef void (*docket_event_ssl_callback)(DocketEventSSL *ev, int what, void *ctx);
+
+typedef void (*docket_event_ssl_read_callback)(DocketEventSSL *ev, void *ctx);
+
+typedef void (*docket_event_ssl_write_callback)(DocketEventSSL *ev, void *ctx);
+#endif
 
 /**
  *
@@ -53,6 +62,16 @@ void DocketEvent_set_read_cb(DocketEvent *event, docket_event_read_callback cb, 
 void DocketEvent_set_write_cb(DocketEvent *event, docket_event_write_callback cb, void *ctx);
 
 void DocketEvent_set_event_cb(DocketEvent *event, docket_event_callback cb, void *ctx);
+
+#ifdef DEVENT_SSL
+
+void DocketEvent_set_ssl_read_cb(DocketEvent *event, docket_event_read_callback cb, void *ctx);
+
+void DocketEvent_set_ssl_write_cb(DocketEvent *event, docket_event_write_callback cb, void *ctx);
+
+void DocketEvent_set_ssl_event_cb(DocketEvent *event, docket_event_callback cb, void *ctx);
+
+#endif
 
 void devent_set_read_enable(DocketEvent *event, bool enable);
 

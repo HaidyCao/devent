@@ -22,11 +22,11 @@
 #endif
 
 #ifndef DEVENT_BUFFER_SIZE
-#define DEVENT_BUFFER_SIZE 4096
+#define DEVENT_BUFFER_SIZE 10240
 #endif
 
-#ifndef DEVENT_READ_BUFFER_SIZE
-#define DEVENT_READ_BUFFER_SIZE 40960
+#ifndef MAX_POOL_SIZE
+#define MAX_POOL_SIZE 1000
 #endif
 
 /**
@@ -77,11 +77,7 @@ ssize_t DocketBuffer_peek(DocketBuffer *buffer, char *data, size_t len);
  */
 ssize_t DocketBuffer_peek_full(DocketBuffer *buffer, char *data, size_t len);
 
-ssize_t DocketBuffer_send(DocketBuffer *buffer, SOCKET fd, int flags, struct sockaddr *address, socklen_t socklen
-#ifdef DEVENT_SSL
-        ,SSL *ssl
-#endif
-);
+ssize_t DocketBuffer_send(DocketEvent *event, SOCKET fd, int flags, DocketBuffer *buffer);
 
 /**
  * move buffer

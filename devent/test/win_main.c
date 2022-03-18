@@ -132,10 +132,12 @@ static void callConnect(HANDLE cp) {
 
 #include "echo_server_test.h"
 #include "telnet_test.h"
+#include "ssl_telnet_test.h"
 
 int main(int argc, char **args) {
   if (TRUE) {
-    telnet_start();
+    ssl_telnet_start();
+//    telnet_start();
 //    echo_server_start();
     return -1;
   }

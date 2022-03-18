@@ -8,7 +8,6 @@
 #include "utils_internal.h"
 #include "log.h"
 #include "docket.h"
-#include "docket_def.h"
 #include "event.h"
 #include "event_def.h"
 #include "buffer.h"
@@ -20,12 +19,8 @@ void devent_write_data(DocketEvent *event, DocketBuffer *buffer) {
   bool write_enable = devent_write_enable(event);
   if (write_enable && DocketBuffer_length(buffer) > 0) {
 #ifdef WIN32
-    ssize_t send_result = DocketBuffer_send(buffer, fd, 0, event->remote_address, event->remote_address_len
-#ifdef DEVENT_SSL
-        , event->ssl
-#endif
-    );
-    if (send_result == -1) {
+    ssize_t send_result = DocketBuffer_send(event, fd, 0, buffer);
+    if (send_result <= 0) {
       LOGE("DocketBuffer_send failed: %s", devent_errno());
       DocketEvent_free(event);
       return;
@@ -74,7 +69,6 @@ void docket_on_event_write(DocketEvent *event) {
     return;
   }
 
-  // TODO SSL
   devent_write_data(event, event->out_buffer);
 }
 #else

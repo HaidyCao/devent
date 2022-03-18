@@ -1,2 +1,4 @@
 openssl
 darwin
+/windows/
+/cygwin/

@@ -20,6 +20,7 @@
 #include "docket_def.h"
 #include "log.h"
 #include "dns.h"
+#include "event_ssl.h"
 
 DocketEvent *DocketEvent_new(Docket *docket, SOCKET fd, void *ctx) {
   DocketEvent *event = calloc(1, sizeof(DocketEvent));
@@ -34,8 +35,7 @@ DocketEvent *DocketEvent_new(Docket *docket, SOCKET fd, void *ctx) {
   event->in_buffer = DocketBuffer_new();
 
 #ifdef DEVENT_SSL
-  event->ssl = NULL;
-  event->ssl_handshaking = false;
+  event->ssl = false;
 #endif
 
   return event;
@@ -75,6 +75,37 @@ void DocketEvent_set_event_cb(DocketEvent *event, docket_event_callback cb, void
   event->event_cb = cb;
   event->ctx = ctx;
 }
+
+#ifdef DEVENT_SSL
+
+void DocketEvent_set_ssl_read_cb(DocketEvent *event, docket_event_read_callback cb, void *ctx) {
+  if (event->ssl) {
+    DocketEventSSLContext *ssl_context = event->ctx;
+
+    ssl_context->ssl_read_cb = cb;
+    ssl_context->ssl_ctx = ctx;
+  }
+}
+
+void DocketEvent_set_ssl_write_cb(DocketEvent *event, docket_event_write_callback cb, void *ctx) {
+  if (event->ssl) {
+    DocketEventSSLContext *ssl_context = event->ctx;
+
+    ssl_context->ssl_write_cb = cb;
+    ssl_context->ssl_ctx = ctx;
+  }
+}
+
+void DocketEvent_set_ssl_event_cb(DocketEvent *event, docket_event_callback cb, void *ctx) {
+  if (event->ssl) {
+    DocketEventSSLContext *ssl_context = event->ctx;
+
+    ssl_context->ssl_event_cb = cb;
+    ssl_context->ssl_ctx = ctx;
+  }
+}
+
+#endif
 
 void devent_set_read_enable(DocketEvent *event, bool enable) {
   if (enable) {
@@ -171,7 +202,7 @@ void DocketEvent_free(DocketEvent *event) {
   if (event == NULL) {
     return;
   }
-  LOGD("fd = %d", event->fd);
+   LOGD("fd = %d", event->fd);
 
   if (event->dns_event) {
     DocketDnsEvent_free(event->dns_event);

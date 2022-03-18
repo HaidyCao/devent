@@ -244,8 +244,8 @@ void docket_dns_read(DocketEvent *dns_event) {
 
   // connect remote
 #ifdef DEVENT_SSL
-  if (event->event_ssl) {
-    DocketEvent_connect_ssl(docket, event->event->fd, (struct sockaddr *) &addr, addr_len);
+  if (dns_context->event_ssl) {
+    DocketEvent_connect_ssl(docket, dns_context->event->fd, (struct sockaddr *) &addr, addr_len);
   } else
 #endif
   {

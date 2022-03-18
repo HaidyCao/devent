@@ -35,8 +35,8 @@ void docks_on_auth_read(DocketEvent *event, void *ctx) {
     return;
   }
 
-  char u[username_len + 1];
-  bzero(u, sizeof(u));
+  char *u = malloc(username_len + 1);
+  bzero(u, username_len + 1);
   memcpy(u, data + 2, username_len);
 
   LOGD("user = %s", u);
@@ -44,11 +44,12 @@ void docks_on_auth_read(DocketEvent *event, void *ctx) {
   size_t pwd_len = (size_t) data[2 + username_len];
   if (len - 2 - username_len - 1 < pwd_len) {
     LOGD("wait more data for password");
+    free(u);
     return;
   }
 
-  char p[pwd_len + 1];
-  bzero(p, sizeof(p));
+  char *p = malloc(pwd_len + 1);
+  bzero(p, pwd_len + 1);
   memcpy(p, data + 2 + username_len + 1, pwd_len);
   DocketBuffer_read_full(buffer, data, 2 + username_len + 1 + pwd_len);
 
@@ -56,11 +57,13 @@ void docks_on_auth_read(DocketEvent *event, void *ctx) {
   ServerConfig *config = server->config;
   char *pwd = c_hash_map_get(config->users, u);
   LOGD("pwd = %s", pwd);
+  free(u);
 
   unsigned char auth_result = 0xFF;
   if (pwd && strcmp(pwd, p) == 0) {
     auth_result = SOCKS_USERNAME_PASSWORD_AUTH_SUCCESS;
   }
+  free(p);
 
   char resp[2] = {SOCKS_USERNAME_PASSWORD_AUTH_VERSION_1, (char) auth_result};
   DocketEvent_write(event, resp, 2);

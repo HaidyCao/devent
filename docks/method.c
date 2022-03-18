@@ -19,9 +19,10 @@ static void docks_on_read_methods_inner(DocketEvent *event, void *ctx) {
     return;
   }
 
-  char methods[context->method_count];
+  char *methods = malloc(context->method_count);
   if (DocketEvent_read_full(event, methods, context->method_count) != context->method_count) {
     LOGI("read methods failed");
+    free(methods);
     DocketEvent_free(event);
     ServerContext_free(context);
     return;
@@ -32,6 +33,7 @@ static void docks_on_read_methods_inner(DocketEvent *event, void *ctx) {
     LOGD("client supported method[%d:%d] = %x", i, methods[i], context->method_count);
   }
   char method = docks_negotication(context, methods, context->method_count);
+  free(methods);
 
   char methods_resp[2];
   methods_resp[0] = SOCKS5_VERSION;

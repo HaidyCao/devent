@@ -28,6 +28,7 @@ static LPFN_CONNECTEX lpfnConnectex = NULL;
 #include "dns.h"
 #include "docket_def.h"
 #include "win_def.h"
+#include "event_ssl.h"
 
 static void on_dns_read(DocketEvent *event, void *ctx) {
   docket_dns_read(event);
@@ -165,6 +166,7 @@ DocketEvent_connect_internal(Docket *docket,
     Docket_add_event(event);
   }
   event->ev = DEVENT_READ_WRITE;
+  event->ssl = ssl;
 
   if (devent_update_events(docket->fd, fd, event->ev, 0) == -1) {
     return NULL;
@@ -172,12 +174,14 @@ DocketEvent_connect_internal(Docket *docket,
 
 #ifdef DEVENT_SSL
   if (ssl) {
-    event->ssl = SSL_new(docket->ssl_ctx);
-    event->ssl_handshaking = true;
-    if (!SSL_set_fd(event->ssl, event->fd)) {
-      LOGE("SSL_set_fd failed: %s", ERR_error_string(ERR_get_error(), NULL));
-    } else {
-      SSL_set_connect_state(event->ssl);
+    event->read_cb = docket_on_ssl_read;
+    event->write_cb = docket_on_ssl_write;
+    DocketEventSSLContext *event_ssl_context = DocketEventSSLContext_new(docket->ssl_ctx);
+    SSL_set_connect_state(event_ssl_context->ssl);
+
+    // send ssl handshake
+    if (!DocketEvent_do_handshake(event, event_ssl_context, NULL)) {
+      return NULL;
     }
   }
 #endif
@@ -243,7 +247,11 @@ DocketEvent *DocketEvent_connect_hostname_internal(Docket *docket, SOCKET fd, co
     sprintf(address_, fmt, host, port);
 
     if (parse_address(address_, &address, &socklen) != -1) {
-      return DocketEvent_connect(docket, fd, &address, socklen);
+      return DocketEvent_connect_internal(docket, fd, SOCK_STREAM, &address, socklen
+#ifdef DEVENT_SSL
+          , ssl
+#endif
+      );
     }
   }
 
@@ -264,42 +272,6 @@ DocketEvent *DocketEvent_connect_hostname_internal(Docket *docket, SOCKET fd, co
   // read dns packet
   DocketEvent_set_read_cb(dns, on_dns_read, ctx);
   docket_dns_write(dns);
-
-//#ifdef WIN32
-//  SOCKET dns_fd = WSASocketW(AF_INET, SOCK_DGRAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
-//  if (dns_fd == INVALID_SOCKET) {
-//    LOGE("create dns fd failed: %s", devent_errno());
-//    return NULL;
-//  }
-//
-//  struct sockaddr_in local;
-//  local.sin_family = AF_INET;
-//  local.sin_addr = in4addr_any;
-//  local.sin_port = htons(0);
-//  if (bind(dns_fd, (const struct sockaddr *) &local, sizeof(local))) {
-//    LOGE("bind dns fd failed: %s", devent_errno());
-//    return NULL;
-//  }
-//  CreateIoCompletionPort((HANDLE) fd, docket->fd, fd, 0);
-//#else
-//  SOCKET dns_fd = socket(AF_INET, SOCK_DGRAM, 0);
-//  if (dns_fd == -1) {
-//    LOGE("create dns fd failed: %s", devent_errno());
-//    return NULL;
-//  }
-//  devent_turn_on_flags(dns_fd, O_NONBLOCK);
-//  devent_update_events(docket->fd, dns_fd, DEVENT_READ_WRITE, 0);
-//#endif
-
-//  DocketDnsEvent *dns_event = DocketDnsEvent_new(docket, dns_fd, host, port);
-//  dns_event->event = event;
-//  event->dns_event = dns_event;
-//
-//#ifdef DEVENT_SSL
-//  dns_event->event_ssl = ssl;
-//#endif
-//
-//  Docket_add_dns_event(dns_event);
   return event;
 }
 
@@ -320,7 +292,7 @@ DocketEvent *DocketEvent_create_udp(Docket *docket, SOCKET fd, struct sockaddr *
 }
 
 #ifdef DEVENT_SSL
-DocketEvent *DocketEvent_connect_ssl(Docket *docket, int fd, struct sockaddr *address, socklen_t socklen) {
+DocketEvent *DocketEvent_connect_ssl(Docket *docket, SOCKET fd, struct sockaddr *address, socklen_t socklen) {
   return DocketEvent_connect_internal(docket, fd, SOCK_STREAM, address, socklen, true);
 }
 

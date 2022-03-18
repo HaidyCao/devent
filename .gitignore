@@ -6,3 +6,7 @@ cmake-build-release
 /devent/test/private.key
 .idea
 release
+/cmake-build-debug-visual-studio/
+/cmake-build-release-cygwin/
+/cmake-build-debug-cygwin/
+.vs

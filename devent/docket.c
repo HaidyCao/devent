@@ -38,7 +38,7 @@
 #include "utils.h"
 
 #ifdef WIN32
-#define RECV_BUF_SIZE 4096
+#define RECV_BUF_SIZE 40960
 
 #ifdef WIN32
 #include <iphlpapi.h>

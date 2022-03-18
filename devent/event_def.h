@@ -11,7 +11,6 @@
 #ifdef DEVENT_SSL
 #include "openssl/ssl.h"
 #include "openssl/err.h"
-
 #endif
 
 struct docket_event {
@@ -74,12 +73,18 @@ struct docket_event {
   unsigned char ev;
 
 #ifdef DEVENT_SSL
-  SSL *ssl;
-  bool ssl_handshaking;
-
-  DocketListener *listener;
+  /**
+   * is ssl event
+   */
+  bool ssl;
 #endif
 };
+
+#ifdef DEVENT_SSL
+struct docket_event_ssl {
+  DocketEvent *event;
+};
+#endif
 
 #define set_write_disable(event) event->ev &= ~DEVENT_WRITE
 #define set_write_enable(event) event->ev |= DEVENT_WRITE

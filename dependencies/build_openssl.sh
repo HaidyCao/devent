@@ -12,6 +12,7 @@ fi
 make distclean
 
 ./config no-ui --prefix="$(pwd)"/../"${OS}" --openssldir="$(pwd)"/../"${OS}"
+# perl Configure VC-WIN64A no-asm no-shared --prefix="C:\Users\haidy\CLionProjects\devent\dependencies\windows"
 
 make -j8
 make install

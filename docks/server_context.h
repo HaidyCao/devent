@@ -5,7 +5,12 @@
 #ifndef DOCKET_SERVER_CONTEXT_H
 #define DOCKET_SERVER_CONTEXT_H
 
-#include <sys/socket.h>
+#ifdef WIN32
+#include <stdint.h>
+#else
+
+#endif
+
 #include "status.h"
 #include "server_config.h"
 #include "docks_def.h"

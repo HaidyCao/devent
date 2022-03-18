@@ -2,10 +2,12 @@
 // Created by Haidy on 2021/11/7.
 //
 #include <stdio.h>
-#include <getopt.h>
+#include "../getopt.h"
 #include <string.h>
+#ifndef WIN32
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#endif
 
 #include "server_config.h"
 #include "log.h"
@@ -77,7 +79,7 @@ static void parse_users(const char *path, ServerConfig *config) {
     }
 
     char user[MAX_USER_LEN];
-    bzero(user, sizeof(user));
+    memset(user, '\0', sizeof(user));
     strncpy(user, line, pwd - line);
 
     while (pwd[0] == ' ') {
@@ -101,32 +103,40 @@ static void parse_users(const char *path, ServerConfig *config) {
   fclose(file);
 }
 
+#ifdef WIN32
+
+static int strcasecmp(char *str1, char *str2) {
+  return _stricmp(str1, str2);
+}
+
+#endif
+
 int parse_config(int argc, char **args, ServerConfig *config) {
   int opt;
   while ((opt = getopt_long(argc, args, "a:u:slh", long_options, NULL)) != -1) {
     switch (opt) {
-    case 'a':config->address = strdup(optarg);
-      break;
-    case 'u':parse_users(optarg, config);
-      break;
-    case 's':config->ssl = true;
-      break;
-    case VAL_SSL_KEY_PATH:config->ssl_key_path = strdup(optarg);
-      break;
-    case VAL_SSL_CERT_PATH:config->ssl_cert_path = strdup(optarg);
-      break;
-    case 'l':
-      if (strcasecmp(optarg, "debug") == 0) {
-        set_log_level(LIB_LOG_DEBUG);
-      } else if (strcasecmp(optarg, "info") == 0) {
-        set_log_level(LIB_LOG_INFO);
-      } else if (strcasecmp(optarg, "error") == 0) {
-        set_log_level(LIB_LOG_ERROR);
-      }
-      break;
-    case 'h':docks_usage();
-      break;
-    default:break;
+      case 'a':config->address = strdup(optarg);
+        break;
+      case 'u':parse_users(optarg, config);
+        break;
+      case 's':config->ssl = true;
+        break;
+      case VAL_SSL_KEY_PATH:config->ssl_key_path = strdup(optarg);
+        break;
+      case VAL_SSL_CERT_PATH:config->ssl_cert_path = strdup(optarg);
+        break;
+      case 'l':
+        if (strcasecmp(optarg, "debug") == 0) {
+          set_log_level(LIB_LOG_DEBUG);
+        } else if (strcasecmp(optarg, "info") == 0) {
+          set_log_level(LIB_LOG_INFO);
+        } else if (strcasecmp(optarg, "error") == 0) {
+          set_log_level(LIB_LOG_ERROR);
+        }
+        break;
+      case 'h':docks_usage();
+        break;
+      default:break;
     }
   }
 
@@ -145,8 +155,7 @@ int parse_config(int argc, char **args, ServerConfig *config) {
   config->bind_type = SOCKS5_ATYPE_IPV4;
 
   config->bind_address = malloc(IPV4_LEN);
-  in_addr_t ip = inet_addr("127.0.0.1");
-  n_write_uint32_t_to_data(config->bind_address, ntohl(ip), 0);
+  n_write_uint32_t_to_data(config->bind_address, INADDR_LOOPBACK, 0);
   config->bind_address_length = IPV4_LEN;
 
   if (c_hash_map_get_count(config->users) == 0) {
