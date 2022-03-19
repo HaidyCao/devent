@@ -62,9 +62,6 @@ DocketEvent_connect_internal(Docket *docket,
                              int fd_type,
                              struct sockaddr *address,
                              socklen_t socklen
-#ifdef DEVENT_SSL
-    , bool ssl
-#endif
 ) {
   if (docket == NULL) {
     return NULL;
@@ -166,25 +163,10 @@ DocketEvent_connect_internal(Docket *docket,
     Docket_add_event(event);
   }
   event->ev = DEVENT_READ_WRITE;
-  event->ssl = ssl;
 
   if (devent_update_events(docket->fd, fd, event->ev, 0) == -1) {
     return NULL;
   }
-
-#ifdef DEVENT_SSL
-  if (ssl) {
-    event->read_cb = docket_on_ssl_read;
-    event->write_cb = docket_on_ssl_write;
-    DocketEventSSLContext *event_ssl_context = DocketEventSSLContext_new(docket->ssl_ctx);
-    SSL_set_connect_state(event_ssl_context->ssl);
-
-    // send ssl handshake
-    if (!DocketEvent_do_handshake(event, event_ssl_context, NULL)) {
-      return NULL;
-    }
-  }
-#endif
 
   // udp
   if (fd_type == SOCK_DGRAM) {
@@ -247,12 +229,12 @@ DocketEvent *DocketEvent_connect_hostname_internal(Docket *docket, SOCKET fd, co
     sprintf(address_, fmt, host, port);
 
     if (parse_address(address_, &address, &socklen) != -1) {
-      return DocketEvent_connect_internal(docket, fd, SOCK_STREAM, &address, socklen
-#ifdef DEVENT_SSL
-          , ssl
-#endif
-      );
+      return DocketEvent_connect_internal(docket, fd, SOCK_STREAM, &address, socklen);
     }
+  }
+
+  if (fd == -1) {
+    fd = new_fd(SOCK_STREAM, NULL);
   }
 
   DocketEvent *event = DocketEvent_new(docket, fd, NULL);
@@ -272,35 +254,49 @@ DocketEvent *DocketEvent_connect_hostname_internal(Docket *docket, SOCKET fd, co
   // read dns packet
   DocketEvent_set_read_cb(dns, on_dns_read, ctx);
   docket_dns_write(dns);
+
+  Docket_add_event(event);
   return event;
 }
 
 DocketEvent *DocketEvent_connect(Docket *docket, SOCKET fd, struct sockaddr *address, socklen_t socklen) {
-  return DocketEvent_connect_internal(docket, fd, SOCK_STREAM, address, socklen
-#ifdef DEVENT_SSL
-      , false
-#endif
-  );
+  return DocketEvent_connect_internal(docket, fd, SOCK_STREAM, address, socklen);
 }
 
 DocketEvent *DocketEvent_create_udp(Docket *docket, SOCKET fd, struct sockaddr *address, socklen_t socklen) {
-  return DocketEvent_connect_internal(docket, fd, SOCK_DGRAM, address, socklen
-#ifdef DEVENT_SSL
-      , false
-#endif
-  );
+  return DocketEvent_connect_internal(docket, fd, SOCK_DGRAM, address, socklen);
 }
 
 #ifdef DEVENT_SSL
-DocketEvent *DocketEvent_connect_ssl(Docket *docket, SOCKET fd, struct sockaddr *address, socklen_t socklen) {
-  return DocketEvent_connect_internal(docket, fd, SOCK_STREAM, address, socklen, true);
+static DocketEventSSL *prepare_and_get_event_ssl(DocketEvent *event) {
+  if (event->ssl) {
+    return event->ssl;
+  }
+
+  event->read_cb = docket_on_ssl_read;
+  event->write_cb = docket_on_ssl_write;
+  event->event_cb = docket_on_ssl_event;
+  DocketEventSSLContext *event_ssl_context = DocketEventSSLContext_new(event->docket->ssl_ctx);
+  SSL_set_connect_state(event_ssl_context->ssl);
+  event->ctx = event_ssl_context;
+  DocketEventSSL *event_ssl = DocketEventSSL_new(event);
+
+  return event_ssl;
 }
 
-DocketEvent *DocketEvent_connect_hostname_ssl(Docket *docket,
-                                              int fd,
-                                              const char *host,
-                                              unsigned short port) {
-  return DocketEvent_connect_hostname_internal(docket, fd, host, port, true);
+DocketEventSSL *DocketEvent_connect_ssl(Docket *docket, SOCKET fd, struct sockaddr *address, socklen_t socklen) {
+  DocketEvent *event = DocketEvent_connect_internal(docket, fd, SOCK_STREAM, address, socklen);
+  if (event) return prepare_and_get_event_ssl(event);
+  return NULL;
+}
+
+DocketEventSSL *DocketEvent_connect_hostname_ssl(Docket *docket,
+                                                 int fd,
+                                                 const char *host,
+                                                 unsigned short port) {
+  DocketEvent *event = DocketEvent_connect_hostname_internal(docket, fd, host, port, true);
+  if (event) return prepare_and_get_event_ssl(event);
+  return NULL;
 }
 
 #endif

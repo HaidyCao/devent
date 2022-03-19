@@ -21,6 +21,7 @@
 #include "log.h"
 #include "dns.h"
 #include "event_ssl.h"
+#include "buffer_def.h"
 
 DocketEvent *DocketEvent_new(Docket *docket, SOCKET fd, void *ctx) {
   DocketEvent *event = calloc(1, sizeof(DocketEvent));
@@ -78,27 +79,27 @@ void DocketEvent_set_event_cb(DocketEvent *event, docket_event_callback cb, void
 
 #ifdef DEVENT_SSL
 
-void DocketEvent_set_ssl_read_cb(DocketEvent *event, docket_event_read_callback cb, void *ctx) {
-  if (event->ssl) {
-    DocketEventSSLContext *ssl_context = event->ctx;
+void DocketEvent_set_ssl_read_cb(DocketEventSSL *event, docket_event_ssl_read_callback cb, void *ctx) {
+  if (event) {
+    DocketEventSSLContext *ssl_context = event->event->ctx;
 
     ssl_context->ssl_read_cb = cb;
     ssl_context->ssl_ctx = ctx;
   }
 }
 
-void DocketEvent_set_ssl_write_cb(DocketEvent *event, docket_event_write_callback cb, void *ctx) {
-  if (event->ssl) {
-    DocketEventSSLContext *ssl_context = event->ctx;
+void DocketEvent_set_ssl_write_cb(DocketEventSSL *event, docket_event_ssl_write_callback cb, void *ctx) {
+  if (event) {
+    DocketEventSSLContext *ssl_context = event->event->ctx;
 
     ssl_context->ssl_write_cb = cb;
     ssl_context->ssl_ctx = ctx;
   }
 }
 
-void DocketEvent_set_ssl_event_cb(DocketEvent *event, docket_event_callback cb, void *ctx) {
-  if (event->ssl) {
-    DocketEventSSLContext *ssl_context = event->ctx;
+void DocketEvent_set_ssl_event_cb(DocketEventSSL *event, docket_event_ssl_callback cb, void *ctx) {
+  if (event) {
+    DocketEventSSLContext *ssl_context = event->event->ctx;
 
     ssl_context->ssl_event_cb = cb;
     ssl_context->ssl_ctx = ctx;
@@ -237,10 +238,45 @@ void DocketEvent_free(DocketEvent *event) {
 
 #ifdef DEVENT_SSL
   if (event->ssl) {
-    SSL_free(event->ssl);
-    event->ssl = NULL;
+    DocketEventSSL_free(event->ssl);
+    DocketEventSSLContext_free(event->ctx);
   }
 #endif
 
   free(event);
 }
+
+#ifdef WIN32
+
+ssize_t DocketEventSSL_read(DocketEventSSL *event, char *data, size_t len) {
+  if (event == NULL) {
+    LOGD("event is NULL");
+    return -1;
+  }
+  DocketEventSSLContext *ssl_context = event->event->ctx;
+  return DocketBuffer_read(ssl_context->ssl_in_buffer, data, len);
+}
+
+void DocketEventSSL_write(DocketEventSSL *event, const char *data, size_t len) {
+  DocketEventSSLContext *ssl_context = event->event->ctx;
+  DocketBuffer *out_buffer = ssl_context->ssl_out_buffer;
+
+  int r = SSL_write(ssl_context->ssl, data, (int) len);
+  if (r < 1) {
+    int error = SSL_get_error(ssl_context->ssl, r);
+    LOGI("BIO_write error: %d", ERR_error_string(error, NULL));
+    devent_close_internal(event->event, DEVENT_WRITE | DEVENT_ERROR | DEVENT_OPENSSL);
+    return;
+  }
+
+  Buffer *buffer = Docket_buffer_alloc();
+  while ((buffer->len = BIO_read(ssl_context->wbio, buffer->data, sizeof(buffer->data))) > 0) {
+    DocketBuffer_write(out_buffer, buffer->data, buffer->len);
+  }
+
+  if (devent_write_enable(event->event)) {
+    devent_write_data(event->event, out_buffer);
+  }
+}
+
+#endif

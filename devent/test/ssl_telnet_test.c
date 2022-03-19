@@ -9,13 +9,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #ifdef WIN32
-
+#include <WinSock2.h>
 #else
 #include <unistd.h>
 #endif
 #define LOGD(fmt, ...) printf("[%s(%d):%s]: " fmt "\n", __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
-
-static char buffer[1024 * 1024];
 
 static void on_stdin_read(DocketEvent *ev, void *ctx) {
   LOGD("");
@@ -23,24 +21,23 @@ static void on_stdin_read(DocketEvent *ev, void *ctx) {
 
   DocketBuffer *buf = DocketEvent_get_in_buffer(ev);
 
+  char buffer[1024 * 10];
   ssize_t len = DocketBuffer_read(buf, buffer, sizeof(buffer));
   if (len > 0) {
-    send(_fileno(stdout), buffer, len, 0);
-    DocketEvent_write(remove_ev, buffer, len);
-    DocketEvent_write(remove_ev, "\r\n", 2);
+    fwrite(buffer, 1, len, stdout);
   }
 }
 
-static void on_remote_read(DocketEvent *ev, void *ctx) {
-  DocketBuffer *buf = DocketEvent_get_in_buffer(ev);
-  ssize_t len = DocketBuffer_read(buf, buffer, sizeof(buffer));
+static void on_remote_read(DocketEventSSL *ev, void *ctx) {
+  char buffer[1024 * 10];
+  ssize_t len = DocketEventSSL_read(ev, buffer, sizeof(buffer));
 
   if (len > 0) {
-    send(_fileno(stdout), buffer, len, 0);
+    fwrite(buffer, 1, len, stdout);
   }
 }
 
-static void on_connect(DocketEvent *ev, int what, void *ctx) {
+static void on_connect(DocketEventSSL *ev, int what, void *ctx) {
   Docket *docket = ctx;
   LOGD("what = %d", what);
   if (what & DEVENT_ERROR) {
@@ -48,19 +45,30 @@ static void on_connect(DocketEvent *ev, int what, void *ctx) {
     exit(-1);
   }
 
-  DocketEvent_set_cb(ev, on_remote_read, NULL, on_connect, NULL);
+//  DocketEvent_set_cb(ev, on_remote_read, NULL, on_connect, NULL);
 
-  DocketEvent *ev_stdin = DocketEvent_create(docket, _fileno(stdin));
-  DocketEvent_set_read_cb(ev_stdin, on_stdin_read, ev);
+  DocketEvent_set_ssl_read_cb(ev, on_remote_read, NULL);
+
+//  ReadFile()
+//  DocketEvent *ev_stdin = DocketEvent_create(docket, _fileno(stdin));
+//  DocketEvent_set_read_cb(ev_stdin, on_stdin_read, ev);
+
+//  HANDLE handle = CreateFile("CONIN$", FILE_GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, 0);
+//  HANDLE iocp = CreateIoCompletionPort(handle, NULL, 0, 0);
+//
+//  if (iocp == NULL) {
+//    printf("error : %d\n", GetLastError());
+//  }
 }
 
 void ssl_telnet_start() {
   Docket *docket = Docket_new();
 //  Docket_set_dns_server(docket, "114.114.114.114");
 
-  DocketEvent *event = DocketEvent_connect_hostname_ssl(docket, -1, "imap.qq.com", 993);
+  DocketEventSSL *event = DocketEvent_connect_hostname_ssl(docket, -1, "imap.qq.com", 993);
 //  DocketEvent *event = DocketEvent_connect_hostname_ssl(docket, -1, "127.0.0.1", 1188);
 
-  DocketEvent_set_event_cb(event, on_connect, docket);
+//  DocketEvent_set_event_cb(event, on_connect, docket);
+  DocketEvent_set_ssl_event_cb(event, on_connect, docket);
   Docket_loop(docket);
 }

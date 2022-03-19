@@ -60,7 +60,7 @@ DocketEvent *DocketEvent_connect_hostname(Docket *docket, SOCKET fd, const char 
  * @param socklen address len
  * @return event
  */
-DocketEvent *DocketEvent_connect_ssl(Docket *docket, SOCKET fd, struct sockaddr *address, socklen_t socklen);
+DocketEventSSL *DocketEvent_connect_ssl(Docket *docket, SOCKET fd, struct sockaddr *address, socklen_t socklen);
 
 /**
  * connect remote by hostname and port
@@ -70,7 +70,7 @@ DocketEvent *DocketEvent_connect_ssl(Docket *docket, SOCKET fd, struct sockaddr 
  * @param port      remote port
  * @return event
  */
-DocketEvent *DocketEvent_connect_hostname_ssl(Docket *docket, int fd, const char *host, unsigned short port);
+DocketEventSSL *DocketEvent_connect_hostname_ssl(Docket *docket, int fd, const char *host, unsigned short port);
 
 #endif
 

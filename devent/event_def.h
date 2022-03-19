@@ -76,15 +76,9 @@ struct docket_event {
   /**
    * is ssl event
    */
-  bool ssl;
+  DocketEventSSL *ssl;
 #endif
 };
-
-#ifdef DEVENT_SSL
-struct docket_event_ssl {
-  DocketEvent *event;
-};
-#endif
 
 #define set_write_disable(event) event->ev &= ~DEVENT_WRITE
 #define set_write_enable(event) event->ev |= DEVENT_WRITE

@@ -16,6 +16,7 @@
 #include "docket.h"
 #include "docket_def.h"
 #include "listener_def.h"
+#include "event_ssl.h"
 
 char *devent_errno() {
   static char msg[1024];
@@ -104,14 +105,24 @@ void devent_close_internal(DocketEvent *event, int what) {
   SOCKET fd = event->fd;
 
   event->ev = DEVENT_NONE;
-  if (event->event_cb) {
-    event->event_cb(event, what, event->ctx);
+
+#ifdef DEVENT_SSL
+  if (event->ssl) {
+    DocketEventSSLContext *ssl_context = event->ctx;
+    if (ssl_context && ssl_context->ssl_event_cb) {
+      DocketEventSSL event_ssl;
+      event_ssl.event = event;
+      ssl_context->ssl_event_cb(&event_ssl, what, ssl_context->ssl_ctx);
+    }
+  } else
+#endif
+  {
+    if (event->event_cb) {
+      event->event_cb(event, what, event->ctx);
+    }
   }
 
-  event = Docket_find_event(docket, fd);
-  if (event) {
-    DocketEvent_free(event);
-  }
+  DocketEvent_free(Docket_find_event(docket, fd));
 }
 
 bool errno_is_EAGAIN(int eno) {

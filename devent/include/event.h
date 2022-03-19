@@ -65,11 +65,28 @@ void DocketEvent_set_event_cb(DocketEvent *event, docket_event_callback cb, void
 
 #ifdef DEVENT_SSL
 
-void DocketEvent_set_ssl_read_cb(DocketEvent *event, docket_event_read_callback cb, void *ctx);
+void DocketEvent_set_ssl_read_cb(DocketEventSSL *event, docket_event_ssl_read_callback cb, void *ctx);
 
-void DocketEvent_set_ssl_write_cb(DocketEvent *event, docket_event_write_callback cb, void *ctx);
+void DocketEvent_set_ssl_write_cb(DocketEventSSL *event, docket_event_ssl_write_callback cb, void *ctx);
 
-void DocketEvent_set_ssl_event_cb(DocketEvent *event, docket_event_callback cb, void *ctx);
+void DocketEvent_set_ssl_event_cb(DocketEventSSL *event, docket_event_ssl_callback cb, void *ctx);
+
+/**
+ * read data from event ssl
+ * @param event event
+ * @param data  data
+ * @param len   length of data
+ * @return length of data read from event, or -1 if read failed
+ */
+ssize_t DocketEventSSL_read(DocketEventSSL *event, char *data, size_t len);
+
+/**
+ * write data to event ssl
+ * @param event event
+ * @param data  data
+ * @param len   length of data
+ */
+void DocketEventSSL_write(DocketEventSSL *event, const char *data, size_t len);
 
 #endif
 
