@@ -32,6 +32,13 @@ void docket_on_handle_read_data(IO_CONTEXT *io, DWORD size, DocketEvent *event) 
   }
 }
 #else
+#include "event_def.h"
+#include "event.h"
+#include "docket.h"
+
+#define DEVENT_READ_BUFFER_SIZE 10240
+
+
 void docket_on_event_read(DocketEvent *event) {
   LOGD("");
   set_write_disable(event);
@@ -94,7 +101,7 @@ void docket_on_event_read(DocketEvent *event) {
   if (len > 0 || (len == -1 && (errno_is_EAGAIN(err_number)))) {
     // TODO update read and write timeout
     set_write_enable(event);
-    devent_write_data(event, event->out_buffer, NULL, 0);
+    devent_write_data(event, event->out_buffer);
     return;
   }
 

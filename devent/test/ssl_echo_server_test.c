@@ -12,7 +12,6 @@
 #include "utils.h"
 
 static void echo_read(DocketEvent *event, void *ctx) {
-  LOGD("echo_read: fd = %d", DocketEvent_getFD(event));
   char data[1024];
   ssize_t len = DocketEvent_read(event, data, sizeof(data));
   if (len == 0) {
@@ -41,7 +40,7 @@ int cert_verify_callback(X509_STORE_CTX *store_ctx, void *ctx) {
   return 1;
 }
 
-static int echo() {
+static void echo() {
   Docket *docket = Docket_new();
 
   struct sockaddr_storage local;
@@ -49,7 +48,7 @@ static int echo() {
   const char *address = "127.0.0.1:1188";
   if (parse_address(address, (struct sockaddr *) &local, &socklen) == -1) {
     LOGE("parse address failed: %s", address);
-    return -1;
+    return;
   }
 
   Docket_create_ssl_listener_by_path(docket,
@@ -61,7 +60,7 @@ static int echo() {
                                      (struct sockaddr *) &local,
                                      socklen,
                                      docket);
-  return Docket_loop(docket);
+  Docket_loop(docket);
 }
 
 void echo_ssl_server_start() {

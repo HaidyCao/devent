@@ -145,7 +145,11 @@ DocketEvent_connect_internal(Docket *docket,
     local.sin_family = AF_INET;
     if (bind(fd, (struct sockaddr *) &local, local_len) == -1) {
       LOGD("bind failed: fd = %d, %s", fd, devent_errno());
+#ifdef WIN32
       closesocket(fd);
+#else
+      close(fd);
+#endif
       return NULL;
     }
 

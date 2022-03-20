@@ -12,8 +12,8 @@
 #include "utils_internal.h"
 #include "docket_def.h"
 #include "docket.h"
-#include "accept.h"
 #include "log.h"
+#include "event.h"
 
 #ifdef DEVENT_SSL
 #include "openssl/err.h"
@@ -34,7 +34,7 @@ Docket_create_listener_internal(Docket *docket,
     fd = socket(address->sa_family, SOCK_STREAM, 0);
     if (fd == -1) {
       LOGD("docket_create_listener failed: fd = -1, reason = %s", devent_errno());
-      return NULL;F
+      return NULL;
     }
 #else
     fd = WSASocketW(address->sa_family, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
@@ -65,7 +65,7 @@ Docket_create_listener_internal(Docket *docket,
 
 #ifndef WIN32
   devent_turn_on_flags(fd, O_NONBLOCK);
-  devent_update_events(Docket_get_fd(docket), fd, DEVENT_READ_WRITE, 0);
+  devent_update_events(docket->fd, fd, DEVENT_READ_WRITE, 0);
 #else
   CreateIoCompletionPort((HANDLE) fd, docket->fd, fd, 0);
 

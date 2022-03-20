@@ -2,6 +2,7 @@
 // Created by Haidy on 2021/11/20.
 //
 #include <stdio.h>
+#include <string.h>
 
 #include "telnet_test.h"
 #include "docket.h"

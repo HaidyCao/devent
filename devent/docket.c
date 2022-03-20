@@ -25,6 +25,8 @@
 #include <WS2tcpip.h>
 
 #pragma comment(lib, "ws2_32.lib")
+#else
+#include <resolv.h>
 #endif
 
 #include "docket.h"
@@ -71,12 +73,14 @@ void IO_CONTEXT_free(IO_CONTEXT *ctx) {
 #endif
 
 Docket *Docket_new() {
+#ifdef WIN32
   WSADATA lpWsaData;
   int startUpResult = WSAStartup(WINSOCK_VERSION, (LPWSADATA) &lpWsaData);
   if (startUpResult != 0) {
     LOGD("WSAStartup failed: %s", devent_errno());
     return NULL;
   }
+#endif
 
   Docket *docket = calloc(1, sizeof(Docket));
 #ifdef __APPLE__

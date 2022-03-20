@@ -11,13 +11,11 @@
 #include <arpa/inet.h>
 #endif
 
-#include "event.h"
 #include "buffer.h"
 #include "write.h"
 #include "utils_internal.h"
 #include "docket.h"
 #include "event_def.h"
-#include "docket_def.h"
 #include "log.h"
 #include "dns.h"
 #include "event_ssl.h"

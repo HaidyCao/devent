@@ -8,10 +8,11 @@
 
 #ifdef WIN32
 #include <WinSock2.h>
+#else
+#include <fcntl.h>
 #endif
 #include "utils_internal.h"
 #include "event.h"
-#include "event_def.h"
 #include "log.h"
 #include "docket.h"
 #include "docket_def.h"

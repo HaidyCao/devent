@@ -29,11 +29,7 @@ void devent_write_data(DocketEvent *event, DocketBuffer *buffer) {
     int flags = MSG_NOSIGNAL;
     while (devent_write_enable(event) && DocketBuffer_length(buffer) > 0) {
 
-      ssize_t wr = DocketBuffer_send(buffer, fd, flags, address, socklen
-#ifdef DEVENT_SSL
-                                     , event->ssl
-#endif
-                                     );
+      ssize_t wr = DocketBuffer_send(event, fd, flags, buffer);
       if (wr == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
           set_write_disable(event);
@@ -75,7 +71,7 @@ void docket_on_event_write(DocketEvent *event) {
 #include <errno.h>
 
 void docket_on_event_write(DocketEvent *event) {
-  int fd = DocketEvent_getFD(event);
+  int fd = event->fd;
 
   LOGD("event fd = %d", fd);
 
@@ -98,6 +94,6 @@ void docket_on_event_write(DocketEvent *event) {
   }
 
   // TODO UDP
-  devent_write_data(event, event->out_buffer, event->remote_address, event->remote_address_len);
+  devent_write_data(event, event->out_buffer);
 }
 #endif

@@ -295,24 +295,19 @@ ssize_t DocketBuffer_send(DocketEvent *event, SOCKET fd, int flags, DocketBuffer
     }
   }
 #else
-#ifdef DEVENT_SSL
-    if (event->ssl) {
-        wr = SSL_write(event->ssl, head->data + head->pos, (int) head->len);
-    } else
-#endif
-    if (address) {
-        wr = sendto(event->fd, head->data + head->pos, head->len, flags, event->remote_address, event->remote_address_len);
-    } else {
-        wr = send(event->fd, head->data + head->pos, head->len, flags);
-    }
+  if (event->remote_address) {
+    wr = sendto(event->fd, head->data + head->pos, head->len, flags, event->remote_address, event->remote_address_len);
+  } else {
+    wr = send(event->fd, head->data + head->pos, head->len, flags);
+  }
 
-    if (wr == -1 && errno == ENOTSOCK) {
-        wr = write(event->fd, head->data + head->pos, head->len);
-    }
+  if (wr == -1 && errno == ENOTSOCK) {
+    wr = write(event->fd, head->data + head->pos, head->len);
+  }
 
-    if (wr == -1 || wr == 0) {
-        return -1;
-    }
+  if (wr == -1 || wr == 0) {
+    return -1;
+  }
 #endif
 
   LOCK(buffer, {

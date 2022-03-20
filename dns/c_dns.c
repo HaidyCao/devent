@@ -51,6 +51,12 @@ static int asprintf(char **strp, const char *format, ...) {
   return retval;
 }
 
+#else
+
+#ifndef sprintf_s
+#define sprintf_s(c, l, f, ...) sprintf(c, f, __VA_ARGS__)
+#endif
+
 #endif
 
 static void hexDump(char *buf, int len, int addr) {
@@ -153,7 +159,7 @@ static int get_name(char *data, size_t data_len, char *name_start, char **result
       name_size += start[0] + 1;
       // strndup(start + 1, start[0]);
       char *tmp = malloc(start[0] + 1);
-      strncpy_s(tmp, start[0] + 1, start + 1, start[0]);
+      strncpy(tmp, start + 1, start[0]);
       if (name == NULL) {
 //        name = strndup(start + 1, start[0]);
         name = tmp;

@@ -7,6 +7,7 @@
 
 #include <stdbool.h>
 #include "docket_def.h"
+#include "event.h"
 
 #ifdef DEVENT_SSL
 #include "openssl/ssl.h"

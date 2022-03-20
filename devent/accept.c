@@ -92,13 +92,14 @@ int docket_accept(Docket *docket, int fd) {
   if (listener) {
 #ifdef DEVENT_SSL
     if (listener->ssl_ctx) {
-      event->ssl_handshaking = true;
-      event->ssl = SSL_new(docket->ssl_ctx);
-      SSL_set_fd(event->ssl, event->fd);
-      SSL_set_accept_state(event->ssl);
-
-      // delay connect callback after ssl handshake
-      event->listener = listener;
+      // TODO listener ssl
+//      event->ssl_handshaking = true;
+//      event->ssl = SSL_new(docket->ssl_ctx);
+//      SSL_set_fd(event->ssl, event->fd);
+//      SSL_set_accept_state(event->ssl);
+//
+//      // delay connect callback after ssl handshake
+//      event->listener = listener;
     } else
 #endif
     {

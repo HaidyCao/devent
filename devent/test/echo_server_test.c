@@ -2,6 +2,9 @@
 // Created by Haidy on 2021/11/20.
 //
 #include <stdio.h>
+#ifndef WIN32
+#include <strings.h>
+#endif
 
 #include "echo_server_test.h"
 
