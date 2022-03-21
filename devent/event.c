@@ -268,8 +268,8 @@ void DocketEventSSL_write(DocketEventSSL *event, const char *data, size_t len) {
   }
 
   Buffer *buffer = Docket_buffer_alloc();
-  while ((buffer->len = BIO_read(ssl_context->wbio, buffer->data, sizeof(buffer->data))) > 0) {
-    DocketBuffer_write(out_buffer, buffer->data, buffer->len);
+  while ((r = BIO_read(ssl_context->wbio, buffer->data, sizeof(buffer->data))) > 0) {
+    DocketBuffer_write(out_buffer, buffer->data, r);
   }
 
   if (devent_write_enable(event->event)) {

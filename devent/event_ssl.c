@@ -81,7 +81,7 @@ static void docket_on_ssl_read_transfer(DocketEvent *event, void *ctx) {
   }
 
   // call ssl read callback
-  if (event_ssl_context->ssl_read_cb) {
+  if (event_ssl_context->ssl_read_cb && DocketBuffer_length(event_ssl_context->ssl_in_buffer) > 0) {
     event_ssl_context->ssl_read_cb(event->ssl, event_ssl_context->ssl_ctx);
   }
 }
