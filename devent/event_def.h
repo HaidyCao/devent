@@ -68,6 +68,10 @@ struct docket_event {
    */
   bool connected;
 
+#ifdef WIN32
+  bool is_file;
+#endif
+
   /**
    * read write
    */

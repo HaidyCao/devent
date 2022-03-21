@@ -10,3 +10,4 @@ release
 /cmake-build-release-cygwin/
 /cmake-build-debug-cygwin/
 .vs
+/cmake-build-debug-mingw/

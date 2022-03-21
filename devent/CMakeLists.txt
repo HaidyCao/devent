@@ -13,6 +13,7 @@ add_library(devent
         dns.h
         read.c
         event.c
+        file_event.c
         event_ssl.c
         utils.c
         log.c

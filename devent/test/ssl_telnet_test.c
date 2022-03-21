@@ -41,8 +41,6 @@ static void on_remote_read(DocketEventSSL *ev, void *ctx) {
 }
 
 static void on_connect(DocketEventSSL *ev, int what, void *ctx) {
-  Docket *docket = ctx;
-  LOGD("what = %d", what);
   if (what & DEVENT_ERROR) {
     LOGD("connect failed");
     exit(-1);
@@ -51,6 +49,7 @@ static void on_connect(DocketEventSSL *ev, int what, void *ctx) {
 //  DocketEvent_set_cb(ev, on_remote_read, NULL, on_connect, NULL);
 
   DocketEvent_set_ssl_read_cb(ev, on_remote_read, NULL);
+//  int file = CreateFile("CONIN$", FILE_GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, 0);
 
   char buffer[1024 * 10];
   scanf("%s", buffer);

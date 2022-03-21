@@ -2,12 +2,12 @@
 // Created by haidy on 2020/7/19.
 //
 #include <stdlib.h>
-#include <sys/types.h>
 
 #include <string.h>
 
-#ifndef _MSC_VER
+#ifndef WIN32
 #include <strings.h>
+#include <sys/types.h>
 #else
 #define uint unsigned int
 #endif
@@ -89,11 +89,11 @@ static int resize(CSparseArray *array, uint64_t len) {
 static int64_t find_index(CSparseArray *array, int64_t key) {
     uint64_t len = array->len;
     if (len == 0) {
-        return ~(uint64_t) 0;
+        return ~(int64_t) 0;
     }
 
     int64_t start = 0;
-    int64_t end = len - 1;
+    int64_t end = (int64_t) len - 1;
     int64_t mid = end / 2;
 
     int64_t mid_key;
@@ -112,7 +112,7 @@ static int64_t find_index(CSparseArray *array, int64_t key) {
         mid = (start + end) / 2;
     }
 
-    return ~(uint64_t) start;
+    return ~(int64_t) start;
 }
 
 void *CSparseArray_put(CSparseArray *array, int64_t key, void *v) {
@@ -130,9 +130,9 @@ void *CSparseArray_put(CSparseArray *array, int64_t key, void *v) {
     }
 
     // insert
-    index = ~(uint64_t) index;
+    index = ~(int64_t) index;
     int64_t i;
-    for (i = array->len - 1; i >= index; i--) {
+    for (i = (int64_t) array->len - 1; i >= index; i--) {
         array->nodes[i + 1] = array->nodes[i];
     }
 
@@ -168,7 +168,7 @@ void *CSparseArray_remove(CSparseArray *array, int64_t key) {
     }
 
     void *v = array->nodes[index].value;
-    for (int i = index; i < array->len - 1; ++i) {
+    for (int64_t i = index; i < array->len - 1; ++i) {
         array->nodes[i] = array->nodes[i + 1];
     }
     array->len--;
@@ -198,7 +198,7 @@ CSparseArray_remove_before_key(CSparseArray *array, int64_t key, c_sparse_array_
         if (cb) cb(array->nodes[i].key, array->nodes[i].value, arg);
     }
 
-    for (int j = i; j < array->len; ++j) {
+    for (uint64_t j = i; j < array->len; ++j) {
         array->nodes[j - i] = array->nodes[j];
     }
     array->len -= i;
