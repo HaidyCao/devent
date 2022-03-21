@@ -11,6 +11,7 @@
 #else
 #define uint unsigned int
 #endif
+#include <stdint.h>
 
 #include "c_sparse_array.h"
 
@@ -69,7 +70,7 @@ static int resize(CSparseArray *array, uint64_t len) {
 
     uint64_t new_cap = array->cap;
     while (new_cap < len) {
-        new_cap = new_cap + (new_cap >> (uint) 1);
+        new_cap = new_cap + (new_cap >> (uint8_t) 1);
     }
     Node *new_nodes = realloc(array->nodes, new_cap * sizeof(Node));
     if (new_nodes == NULL) {

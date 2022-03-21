@@ -5,9 +5,7 @@
 #include <string.h>
 #include <sys/types.h>
 
-#ifdef _MSC_VER
-#define uint unsigned int
-#endif
+#include <stdint.h>
 
 #include "c_array_list.h"
 
@@ -64,7 +62,7 @@ static int resize(CArrayList *list, size_t length) {
     size_t new_cap = list->cap;
 
     while (new_cap < length) {
-        new_cap = new_cap + (new_cap >> (uint) 1);
+        new_cap = new_cap + (new_cap >> (uint8_t) 1);
     }
 
     void **data = realloc(list->data, new_cap * sizeof(void *));
