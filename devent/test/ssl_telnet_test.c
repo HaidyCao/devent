@@ -11,7 +11,7 @@
 #ifdef WIN32
 #include <WinSock2.h>
 #else
-#include <unistd.h>
+#include <string.h>
 #endif
 #define LOGD(fmt, ...) printf("[%s(%d):%s]: " fmt "\n", __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 
@@ -61,8 +61,8 @@ void ssl_telnet_start() {
   Docket *docket = Docket_new();
 //  Docket_set_dns_server(docket, "114.114.114.114");
 
-//  DocketEventSSL *event = DocketEvent_connect_hostname_ssl(docket, -1, "imap.qq.com", 993);
-  DocketEventSSL *event = DocketEvent_connect_hostname_ssl(docket, -1, "127.0.0.1", 1234);
+  DocketEventSSL *event = DocketEvent_connect_hostname_ssl(docket, -1, "imap.qq.com", 993);
+//  DocketEventSSL *event = DocketEvent_connect_hostname_ssl(docket, -1, "127.0.0.1", 1234);
 
 //  DocketEvent_set_event_cb(event, on_connect, docket);
   DocketEvent_set_ssl_event_cb(event, on_connect, docket);

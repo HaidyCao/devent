@@ -62,12 +62,6 @@ void docket_on_event_read(DocketEvent *event) {
   int err_number = 0;
 
   do {
-#ifdef DEVENT_SSL
-    if (event->ssl) {
-      len = SSL_read(event->ssl, buf, DEVENT_READ_BUFFER_SIZE);
-    } else
-#endif
-
     if (event->remote_address) {
       bzero(&address, sizeof(address));
       len = recvfrom(fd, buf, DEVENT_READ_BUFFER_SIZE, 0, (struct sockaddr *) &address, &socklen);

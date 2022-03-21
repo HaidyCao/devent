@@ -272,6 +272,8 @@ int DocketBuffer_win_send(IO_CONTEXT *io, int flags, struct sockaddr *address, s
 }
 #endif
 
+#include "clib.h"
+
 ssize_t DocketBuffer_send(DocketEvent *event, SOCKET fd, int flags, DocketBuffer *buffer) {
   Buffer *head = NULL;
   LOCK(buffer, {
@@ -296,13 +298,15 @@ ssize_t DocketBuffer_send(DocketEvent *event, SOCKET fd, int flags, DocketBuffer
   }
 #else
   if (event->remote_address) {
-    wr = sendto(event->fd, head->data + head->pos, head->len, flags, event->remote_address, event->remote_address_len);
+    LOGD("send to: %s, len: %d", sockaddr_to_string(event->remote_address, NULL, 0), event->remote_address_len);
+    wr = sendto(fd, head->data + head->pos, head->len, flags, event->remote_address, event->remote_address_len);
   } else {
-    wr = send(event->fd, head->data + head->pos, head->len, flags);
+    LOGD("send");
+    wr = send(fd, head->data + head->pos, head->len, flags);
   }
 
   if (wr == -1 && errno == ENOTSOCK) {
-    wr = write(event->fd, head->data + head->pos, head->len);
+    wr = write(fd, head->data + head->pos, head->len);
   }
 
   if (wr == -1 || wr == 0) {

@@ -238,11 +238,11 @@ int Docket_get_dns_server(Docket *docket, struct sockaddr **address, socklen_t *
       dns_address = malloc(len);
       memcpy(dns_address, &state.nsaddr_list[0], len);
       docket->dns_server.address = dns_address;
-      docket->dns_server.socklen = len;
+      socklen = docket->dns_server.socklen = len;
     }
 
     res_nclose(&state);
-        if (dns_address == NULL) {
+    if (dns_address == NULL) {
       LOGE("dns server is null");
       return -1;
     }

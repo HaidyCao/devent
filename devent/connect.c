@@ -34,7 +34,7 @@ static void on_dns_read(DocketEvent *event, void *ctx) {
   docket_dns_read(event);
 }
 
-static unsigned int new_fd(int fd_type, struct sockaddr *address) {
+static SOCKET new_fd(int fd_type, struct sockaddr *address) {
   int sa_family;
   if (address != NULL) {
     if (address->sa_family != AF_INET && address->sa_family != AF_INET6) {
@@ -51,7 +51,7 @@ static unsigned int new_fd(int fd_type, struct sockaddr *address) {
 #ifdef WIN32
   return WSASocketW(sa_family, fd_type, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
 #else
-  return socket(address->sa_family, fd_type, 0);
+  return socket(sa_family, fd_type, 0);
 #endif
 //  }
 }
@@ -248,6 +248,7 @@ DocketEvent *DocketEvent_connect_hostname_internal(Docket *docket, SOCKET fd, co
   struct sockaddr *dns_server_address;
   socklen_t dns_server_address_len;
   Docket_get_dns_server(docket, &dns_server_address, &dns_server_address_len);
+  LOGD("dns server: %s, len = %d", sockaddr_to_string(dns_server_address, NULL, 0), dns_server_address_len);
 
   DocketEvent *dns = DocketEvent_create_udp(docket, -1, dns_server_address, dns_server_address_len);
   DocketDnsContext *ctx = DocketDnsContext_new(event, strdup(host), port);

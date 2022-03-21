@@ -7,9 +7,12 @@
 #include "docket.h"
 #include "listener.h"
 #include "clib.h"
-#include "log.h"
 #include "event.h"
 #include "utils.h"
+
+#define LOGD(fmt, ...) printf("[%s(%d):%s]: " fmt "\n", __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+#define LOGI(fmt, ...) printf("[%s(%d):%s]: " fmt "\n", __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+#define LOGE(fmt, ...) printf("[%s(%d):%s]: " fmt "\n", __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 
 static void echo_read(DocketEvent *event, void *ctx) {
   char data[1024];

@@ -22,6 +22,7 @@
 #include "buffer_def.h"
 
 DocketEvent *DocketEvent_new(Docket *docket, SOCKET fd, void *ctx) {
+  LOGD("fd = %d", fd);
   DocketEvent *event = calloc(1, sizeof(DocketEvent));
   event->docket = docket;
   event->fd = fd;
@@ -244,7 +245,7 @@ void DocketEvent_free(DocketEvent *event) {
   free(event);
 }
 
-#ifdef WIN32
+#ifdef DEVENT_SSL
 
 ssize_t DocketEventSSL_read(DocketEventSSL *event, char *data, size_t len) {
   if (event == NULL) {
