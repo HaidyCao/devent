@@ -117,6 +117,7 @@ bool DocketEvent_do_handshake(DocketEvent *event, DocketEventSSLContext *event_s
     if (success) {
       *success = true;
     }
+    LOGD("SSL_is_init_finished = %d", SSL_in_connect_init(event_ssl_context->ssl));
   }
   return true;
 }
