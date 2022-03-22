@@ -6,6 +6,8 @@
 #include "log.h"
 #include "buffer_def.h"
 #include "utils_internal.h"
+#include "docket_def.h"
+#include "docket.h"
 
 #ifdef DEVENT_SSL
 
@@ -87,6 +89,7 @@ static void docket_on_ssl_read_transfer(DocketEvent *event, void *ctx) {
 }
 
 bool DocketEvent_do_handshake(DocketEvent *event, DocketEventSSLContext *event_ssl_context, bool *success) {
+//  BIO_do_handshake();
   int r = SSL_do_handshake(event_ssl_context->ssl);
   if (r != 1) {
     int err = SSL_get_error(event_ssl_context->ssl, (int) r);
@@ -138,16 +141,23 @@ void docket_on_ssl_read(DocketEvent *event, void *ctx) {
 
     if (!success) return;
 
-    if (event_ssl_context->ssl_event_cb) {
-      event_ssl_context->ssl_event_cb(event->ssl, DEVENT_CONNECT_SSL, event_ssl_context->ssl_ctx);
-    }
-
     // ssl connect success
     event_ssl_context->ssl_handshaking = true;
     event->read_cb = docket_on_ssl_read_transfer;
     event->write_cb = docket_on_ssl_write_transfer;
 
-    docket_on_ssl_read_transfer(event, event->ctx);
+    Docket *docket = event->docket;
+    SOCKET fd = event->fd;
+
+    if (event_ssl_context->ssl_event_cb) {
+      event_ssl_context->ssl_event_cb(event->ssl, DEVENT_CONNECT_SSL, event_ssl_context->ssl_ctx);
+    }
+
+    event = Docket_find_event(docket, fd);
+
+    if (event && DocketBuffer_length(DocketEvent_get_in_buffer(event))) {
+      docket_on_ssl_read_transfer(event, event->ctx);
+    }
   } else {
     LOGE("no way here");
     devent_close_internal(event, DEVENT_CONNECT | DEVENT_ERROR | DEVENT_OPENSSL);

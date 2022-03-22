@@ -27,6 +27,7 @@
 #include "buffer_def.h"
 #include "win_def.h"
 #include "listener_def.h"
+#include "file_event_internal.h"
 
 #define MAX_EVENT 16
 
@@ -238,6 +239,11 @@ static void iocp_loop(Docket *docket) {
                   DocketEvent_free(event);
                 }
                 IO_CONTEXT_free(io);
+                continue;
+              }
+
+              if (event->is_file) {
+                DocketEvent_readFile(event, io);
                 continue;
               }
 

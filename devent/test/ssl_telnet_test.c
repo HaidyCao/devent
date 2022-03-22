@@ -5,6 +5,7 @@
 #include "ssl_telnet_test.h"
 #include "docket.h"
 #include "connect.h"
+#include "file_event.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,14 +18,13 @@
 
 static void on_stdin_read(DocketEvent *ev, void *ctx) {
   LOGD("");
-  DocketEvent *remove_ev = ctx;
-
-  DocketBuffer *buf = DocketEvent_get_in_buffer(ev);
+  DocketEventSSL *remove_ev = ctx;
 
   char buffer[1024 * 10];
-  ssize_t len = DocketBuffer_read(buf, buffer, sizeof(buffer));
+  ssize_t len = DocketEvent_read(ev, buffer, sizeof(buffer));
   if (len > 0) {
-    fwrite(buffer, 1, len, stdout);
+    DocketEventSSL_write(remove_ev, buffer, len);
+//    fwrite(buffer, 1, len, stdout);
   }
 }
 
@@ -41,8 +41,13 @@ static void on_remote_read(DocketEventSSL *ev, void *ctx) {
 }
 
 static void on_connect(DocketEventSSL *ev, int what, void *ctx) {
+  Docket *docket = ctx;
   if (what & DEVENT_ERROR) {
-    LOGD("connect failed");
+    if (what & DEVENT_CONNECT) {
+      LOGD("connect failed");
+    } else if (what & DEVENT_WRITE) {
+      LOGD("write error");
+    }
     exit(-1);
   }
 
@@ -54,6 +59,9 @@ static void on_connect(DocketEventSSL *ev, int what, void *ctx) {
   char buffer[1024 * 10];
   scanf("%s", buffer);
   DocketEventSSL_write(ev, buffer, strlen(buffer));
+
+//  DocketEvent *stdin_event = DocketEvent_create_stdin_event(docket);
+//  DocketEvent_set_read_cb(stdin_event, on_stdin_read, ev);
 }
 
 void ssl_telnet_start() {

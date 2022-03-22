@@ -202,7 +202,7 @@ void DocketEvent_free(DocketEvent *event) {
   if (event == NULL) {
     return;
   }
-   LOGD("fd = %d", event->fd);
+  LOGD("fd = %d", event->fd);
 
   if (event->dns_event) {
     DocketDnsEvent_free(event->dns_event);
@@ -269,8 +269,15 @@ void DocketEventSSL_write(DocketEventSSL *event, const char *data, size_t len) {
   }
 
   Buffer *buffer = Docket_buffer_alloc();
-  while ((r = BIO_read(ssl_context->wbio, buffer->data, sizeof(buffer->data))) > 0) {
+  while (BIO_should_read(ssl_context->wbio) && (r = BIO_read(ssl_context->wbio, buffer->data, sizeof(buffer->data))) > 0) {
     DocketBuffer_write(out_buffer, buffer->data, r);
+  }
+
+  int err = SSL_get_error(ssl_context->ssl, r);
+  if (err != SSL_ERROR_WANT_READ && err != SSL_ERROR_WANT_WRITE) {
+    LOGE("SSL error: %s", ERR_error_string(err, NULL));
+    devent_close_internal(event->event, DEVENT_WRITE | DEVENT_ERROR | DEVENT_OPENSSL);
+    return;
   }
 
   if (devent_write_enable(event->event)) {
