@@ -258,7 +258,6 @@ ssize_t DocketBuffer_peek_full(DocketBuffer *buffer, char *data, size_t len) {
 #ifdef WIN32
 int DocketBuffer_win_send(IO_CONTEXT *io, int flags, struct sockaddr *address, socklen_t socklen) {
   if (address) {
-    // TODO test for udp
     return WSASendTo(io->socket,
                      &io->buf,
                      1,

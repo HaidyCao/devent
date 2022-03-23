@@ -268,16 +268,13 @@ void DocketEventSSL_write(DocketEventSSL *event, const char *data, size_t len) {
     return;
   }
 
-  Buffer *buffer = Docket_buffer_alloc();
-  while (BIO_should_read(ssl_context->wbio) && (r = BIO_read(ssl_context->wbio, buffer->data, sizeof(buffer->data))) > 0) {
-    DocketBuffer_write(out_buffer, buffer->data, r);
-  }
+  int pending = BIO_pending(ssl_context->wbio);
+  int bio_read_len = 0;
 
-  int err = SSL_get_error(ssl_context->ssl, r);
-  if (err != SSL_ERROR_WANT_READ && err != SSL_ERROR_WANT_WRITE) {
-    LOGE("SSL error: %s", ERR_error_string(err, NULL));
-    devent_close_internal(event->event, DEVENT_WRITE | DEVENT_ERROR | DEVENT_OPENSSL);
-    return;
+  Buffer *buffer = Docket_buffer_alloc();
+  while (bio_read_len < pending && (r = BIO_read(ssl_context->wbio, buffer->data, sizeof(buffer->data))) > 0) {
+    DocketBuffer_write(out_buffer, buffer->data, r);
+    bio_read_len += r;
   }
 
   if (devent_write_enable(event->event)) {

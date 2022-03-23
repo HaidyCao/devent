@@ -35,9 +35,20 @@ static void on_remote_read(DocketEventSSL *ev, void *ctx) {
   if (len > 0) {
     fwrite(buffer, 1, len, stdout);
 
-    scanf("%s", buffer);
-    DocketEventSSL_write(ev, buffer, strlen(buffer));
+//    sprintf(buffer, "%s\r\n", "A1 CAPABILITY");
+//    DocketEventSSL_write(ev, buffer, strlen(buffer));
   }
+}
+
+static char read_file_buf[4096];
+
+static void test_io_completion_routine(
+    DWORD dwErrorCode,
+    DWORD dwNumberOfBytesTransfered,
+    LPOVERLAPPED lpOverlapped
+) {
+
+  LOGD("dwErrorCode %d, dwNumberOfBytesTransfered %d\n", dwErrorCode, dwNumberOfBytesTransfered);
 }
 
 static void on_connect(DocketEventSSL *ev, int what, void *ctx) {
@@ -56,22 +67,30 @@ static void on_connect(DocketEventSSL *ev, int what, void *ctx) {
   DocketEvent_set_ssl_read_cb(ev, on_remote_read, NULL);
 //  int file = CreateFile("CONIN$", FILE_GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, 0);
 
-  char buffer[1024 * 10];
-  scanf("%s", buffer);
-  DocketEventSSL_write(ev, buffer, strlen(buffer));
+//  char buffer[1024 * 10];
+//  scanf("%s\r\n", buffer);
+//  DocketEventSSL_write(ev, buffer, strlen(buffer));
 
-//  DocketEvent *stdin_event = DocketEvent_create_stdin_event(docket);
-//  DocketEvent_set_read_cb(stdin_event, on_stdin_read, ev);
+  DocketEvent *stdin_event = DocketEvent_create_stdin_event(docket);
+  DocketEvent_set_read_cb(stdin_event, on_stdin_read, ev);
+
+//  HANDLE file = CreateFile("CONIN$", FILE_GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, 0);
+//  BindIoCompletionCallback(file, test_io_completion_routine, 0);
+//
+//  OVERLAPPED *olv = (OVERLAPPED *) malloc(sizeof(OVERLAPPED));
+//  ZeroMemory(olv, sizeof(OVERLAPPED));
+//  ReadFile(file, read_file_buf, sizeof(read_file_buf), NULL, olv);
 }
 
 void ssl_telnet_start() {
   Docket *docket = Docket_new();
-//  Docket_set_dns_server(docket, "114.114.114.114");
 
-  DocketEventSSL *event = DocketEvent_connect_hostname_ssl(docket, -1, "imap.qq.com", 993);
-//  DocketEventSSL *event = DocketEvent_connect_hostname_ssl(docket, -1, "127.0.0.1", 1234);
+//  DocketEventSSL *event = DocketEvent_connect_hostname_ssl(docket, -1, "imap.qq.com", 993);
+////  DocketEventSSL *event = DocketEvent_connect_hostname_ssl(docket, -1, "127.0.0.1", 1234);
+//
+//  DocketEvent_set_ssl_event_cb(event, on_connect, docket);
 
-//  DocketEvent_set_event_cb(event, on_connect, docket);
-  DocketEvent_set_ssl_event_cb(event, on_connect, docket);
+  DocketEvent *stdin_event = DocketEvent_create_stdin_event(docket);
+  DocketEvent_set_read_cb(stdin_event, on_stdin_read, docket);
   Docket_loop(docket);
 }

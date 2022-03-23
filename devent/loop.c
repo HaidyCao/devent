@@ -242,14 +242,13 @@ static void iocp_loop(Docket *docket) {
                 continue;
               }
 
-              if (event->is_file) {
-                DocketEvent_readFile(event, io);
-                continue;
-              }
-
               docket_on_handle_read_data(io, num, event);
               event = Docket_find_event(docket, io->socket);
               if (event) {
+                if (event->is_file) {
+                  DocketEvent_readFile(event, io);
+                  continue;
+                }
                 prepare_read(io, event);
               }
             } else {
@@ -330,6 +329,8 @@ static void iocp_loop(Docket *docket) {
       } else {
         // TODO
       }
+    } else {
+      LOGD("GetQueuedCompletionStatus error");
     }
   }
 }

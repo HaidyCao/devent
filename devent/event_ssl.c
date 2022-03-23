@@ -53,7 +53,7 @@ void DocketEventSSLContext_free(DocketEventSSLContext *ctx) {
 }
 
 static void docket_on_ssl_write_transfer(DocketEvent *event, void *ctx) {
-
+  LOGD("");
 }
 
 static void docket_on_ssl_read_transfer(DocketEvent *event, void *ctx) {
@@ -89,20 +89,12 @@ static void docket_on_ssl_read_transfer(DocketEvent *event, void *ctx) {
 }
 
 bool DocketEvent_do_handshake(DocketEvent *event, DocketEventSSLContext *event_ssl_context, bool *success) {
-//  BIO_do_handshake();
   int r = SSL_do_handshake(event_ssl_context->ssl);
   if (r != 1) {
-    int err = SSL_get_error(event_ssl_context->ssl, (int) r);
-    if (err != SSL_ERROR_WANT_READ && err != SSL_ERROR_WANT_WRITE) {
-      LOGE("SSL error: %s", ERR_error_string(err, NULL));
-      devent_close_internal(event, DEVENT_CONNECT | DEVENT_ERROR | DEVENT_OPENSSL);
-      return false;
-    }
-
     Buffer *buffer = Docket_buffer_alloc();
     int br = BIO_read(event_ssl_context->wbio, buffer->data, sizeof(buffer->data));
     if (br < 0) {
-      err = SSL_get_error(event_ssl_context->ssl, br);
+      int err = SSL_get_error(event_ssl_context->ssl, br);
       LOGE("SSL error: %s", ERR_error_string(err, NULL));
       Docket_buffer_release(buffer);
       devent_close_internal(event, DEVENT_CONNECT | DEVENT_ERROR | DEVENT_OPENSSL);
@@ -117,7 +109,6 @@ bool DocketEvent_do_handshake(DocketEvent *event, DocketEventSSLContext *event_s
     if (success) {
       *success = true;
     }
-    LOGD("SSL_is_init_finished = %d", SSL_in_connect_init(event_ssl_context->ssl));
   }
   return true;
 }
@@ -125,7 +116,6 @@ bool DocketEvent_do_handshake(DocketEvent *event, DocketEventSSLContext *event_s
 void docket_on_ssl_read(DocketEvent *event, void *ctx) {
   // ssl client handshake
   DocketEventSSLContext *event_ssl_context = ctx;
-  LOGD("len = %d", DocketBuffer_length(DocketEvent_get_in_buffer(event)));
   if (event_ssl_context->ssl_handshaking) {
     Buffer *buffer = Docket_buffer_alloc();
     ssize_t r = DocketEvent_read(event, buffer->data, sizeof(buffer->data));
@@ -166,7 +156,8 @@ void docket_on_ssl_read(DocketEvent *event, void *ctx) {
 }
 
 void docket_on_ssl_write(DocketEvent *event, void *ctx) {
-  // TODO ssl server handshake
+  // ssl server handshake
+  LOGD("");
 }
 
 void docket_on_ssl_event(DocketEvent *event, int what, void *ctx) {
@@ -183,6 +174,7 @@ void docket_on_ssl_event(DocketEvent *event, int what, void *ctx) {
   }
 
   if (what & DEVENT_CONNECT) {
+    LOGD("ssl socket connect success");
     if (!DocketEvent_do_handshake(event, ssl_context, NULL)) {
       return;
     }

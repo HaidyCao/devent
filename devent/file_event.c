@@ -4,8 +4,57 @@
 
 #include "file_event_internal.h"
 #include "docket.h"
+#include "log.h"
+
+#ifdef WIN32
+typedef struct {
+  OVERLAPPED lpOverlapped;
+  int op;
+  DocketEvent *event;
+
+  WSABUF buf;
+} FileIoContext;
+
+static FileIoContext *FileIoContext_new(DocketEvent *event) {
+  FileIoContext *io = calloc(1, sizeof(FileIoContext));
+  io->event = event;
+
+  return io;
+}
+
+static void io_completion_routine(
+    DWORD dwErrorCode,
+    DWORD dwNumberOfBytesTransfered,
+    LPOVERLAPPED lpOverlapped
+) {
+  IO_CONTEXT *io = lpOverlapped;
+  if (dwErrorCode) {
+//    DocketEvent *event = Docket_find_event(lpOverlapped.do);
+
+    return;
+  }
+}
+
+static void win_read_file(FileIoContext *io) {
+  DocketEvent *event = io->event;
+  if (!ReadFile((HANDLE) event->fd, io->buf.buf, io->buf.len, NULL, (LPOVERLAPPED) io)) {
+    DWORD error = GetLastError();
+    if (error != ERROR_IO_PENDING) {
+      if (event->event_cb) {
+        event->event_cb(event, DEVENT_READ | DEVENT_ERROR, event->ctx);
+      }
+      return;
+    }
+  }
+}
+
+#endif
 
 void DocketEvent_readFile(DocketEvent *event, IO_CONTEXT *io) {
+  if (!devent_read_enable(event)) {
+    return;
+  }
+
   if (io == NULL) {
     io = IO_CONTEXT_new(IOCP_OP_READ, event->fd);
   }
@@ -27,10 +76,16 @@ void DocketEvent_readFile(DocketEvent *event, IO_CONTEXT *io) {
 
 DocketEvent *DocketEvent_create_stdin_event(Docket *docket) {
 #ifdef WIN32
-  HANDLE file = CreateFile("CONIN$", FILE_GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, 0);
-  if (file == NULL) {
+  // TODO new thread
+  HANDLE file = CreateFile("CONIN$", GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+  if (file == INVALID_HANDLE_VALUE) {
     return NULL;
   }
+//  BindIoCompletionCallback(file, io_completion_routine, 0);
+//  FileIoContext *io = FileIoContext_new(file);
+//  io->op = IOCP_OP_READ;
+//  win_read_file(io);
+
   CreateIoCompletionPort(file, docket->fd, (ULONG_PTR) file, 0);
   DocketEvent *event = DocketEvent_new(docket, (SOCKET) file, NULL);
   event->is_file = true;
