@@ -8,10 +8,16 @@
 #include "listener.h"
 #include "server.h"
 
+#ifdef WIN32
+#define bzero ZeroMemory
+#endif
+
 int main(int argc, char **args) {
   ServerConfig config;
   bzero(&config, sizeof(config));
+#ifndef WIN32
   signal(SIGPIPE, SIG_IGN);
+#endif
 
   if (parse_config(argc, args, &config) == -1) {
     return -1;
@@ -40,5 +46,5 @@ int main(int argc, char **args) {
     Docket_create_listener(docket, docks_on_socks_connect, -1, (struct sockaddr *) &local, socklen, &config);
   }
 
-  return Docket_loop(docket);
+  Docket_loop(docket);
 }

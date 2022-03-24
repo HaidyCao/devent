@@ -73,7 +73,6 @@ void docket_remote_disconnect_event(DocketEvent *event, int what, void *ctx) {
 }
 
 void docket_remote_read(DocketEvent *event, void *ctx) {
-  LOGD("");
   RemoteContext *remote = ctx;
   ServerContext *server = remote->server;
 
@@ -81,7 +80,6 @@ void docket_remote_read(DocketEvent *event, void *ctx) {
 }
 
 void docket_server_read(DocketEvent *event, void *ctx) {
-  LOGD("");
   ServerContext *server = ctx;
   RemoteContext *remote = server->remote;
 

@@ -77,6 +77,10 @@ add_executable(
         client_config.c
         client_context.c)
 
+if(WIN32)
+set(WIN_CRYPT "Crypt32")
+endif(WIN32)
+
 target_link_libraries(
         docks
 
@@ -91,6 +95,7 @@ target_link_libraries(
         devent
         cdns
         coll
+        ${WIN_CRYPT}
 )
 
 target_link_libraries(
@@ -99,4 +104,5 @@ target_link_libraries(
         devent
         cdns
         coll
+        ${WIN_CRYPT}
 )
