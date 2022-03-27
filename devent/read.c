@@ -18,10 +18,9 @@
 #include "event_def.h"
 #include "listener_def.h"
 #include "win_def.h"
-
-#ifdef DEVENT_SSL
-#include "openssl/ssl.h"
-#endif
+#include "event_def.h"
+#include "event.h"
+#include "docket.h"
 
 #ifdef WIN32
 void docket_on_handle_read_data(IO_CONTEXT *io, DWORD size, DocketEvent *event) {
@@ -32,29 +31,19 @@ void docket_on_handle_read_data(IO_CONTEXT *io, DWORD size, DocketEvent *event) 
   }
 }
 #else
-#include "event_def.h"
-#include "event.h"
-#include "docket.h"
 
 #define DEVENT_READ_BUFFER_SIZE 10240
 
-
 void docket_on_event_read(DocketEvent *event) {
-  LOGD("");
-  set_write_disable(event);
   static __thread char buf[DEVENT_READ_BUFFER_SIZE];
 
   int fd = event->fd;
   Docket *docket = event->docket;
 
   if (!devent_read_enable(event)) {
-    devent_update_events(docket->fd, fd, event->ev, 1);
     return;
   }
-
-  if (!devent_do_ssl_handshake(event)) {
-    return;
-  }
+//  devent_update_events(docket->fd, fd, event->ev & (~DEVENT_READ), DEVENT_MOD_MOD);
 
   ssize_t len;
   struct sockaddr_storage address;
@@ -76,13 +65,9 @@ void docket_on_event_read(DocketEvent *event) {
       break;
     }
 
-    if (event->remote_address) {
-      // TODO udp
-    } else {
-      DocketBuffer_write(event->in_buffer, buf, len);
-      if (event->read_cb) {
-        event->read_cb(event, event->ctx);
-      }
+    DocketBuffer_write(event->in_buffer, buf, len);
+    if (event->read_cb) {
+      event->read_cb(event, event->ctx);
     }
 
     event = Docket_find_event(docket, fd);
@@ -94,12 +79,13 @@ void docket_on_event_read(DocketEvent *event) {
 
   if (len > 0 || (len == -1 && (errno_is_EAGAIN(err_number)))) {
     // TODO update read and write timeout
-    set_write_enable(event);
+//    devent_update_events(docket->fd, event->fd, event->ev | DEVENT_READ, DEVENT_MOD_MOD);
+
     devent_write_data(event, event->out_buffer);
     return;
   }
 
-  // do final read callback
+  // do final read callback and then try close event
   if (DocketBuffer_length(event->in_buffer) > 0 && event->read_cb) {
     event->read_cb(event, event->ctx);
   }

@@ -3,6 +3,7 @@
 
 #ifndef WIN32
 #include <sys/socket.h>
+#include <netinet/in.h>
 #else
 #include <WS2tcpip.h>
 #include <stdint.h>

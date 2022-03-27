@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.10)
 project(devent C)
 
 set(CMAKE_C_STANDARD 99)
@@ -62,10 +62,17 @@ if (DEVENT_SSL_ENABLE)
     message("OPENSSL_CRYPTO: ${OPENSSL_CRYPTO}")
 endif ()
 
-if (${OS} STREQUAL "windows")
+if (WIN32)
     set(LIBRESOLV "")
+    set(LIB_PTHREAD "")
+    set(LIB_DL "")
 else ()
     set(LIBRESOLV "resolv")
+    find_library(LIB_PTHREAD pthread)
+    find_library(LIB_DL dl)
+
+    message("LIB_PTHREAD = ${LIB_PTHREAD}")
+    message("LIB_DL = ${LIB_DL}")
 endif ()
 
 add_dependencies(
@@ -81,6 +88,9 @@ target_link_libraries(
         # ssl
         ${OPENSSL_SSL}
         ${OPENSSL_CRYPTO}
+
+        ${LIB_DL}
+        ${LIB_PTHREAD}
 
         # libresolv
         ${LIBRESOLV}

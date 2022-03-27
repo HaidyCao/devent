@@ -53,11 +53,9 @@ int docket_accept(Docket *docket, SOCKET listener, SOCKET fd, IO_CONTEXT *io) {
 #include <sys/socket.h>
 #include <sys/fcntl.h>
 
-#include "utils_internal.h"
 #include "listener_def.h"
 #include "docket.h"
 #include "event_def.h"
-#include "docket_def.h"
 
 int docket_accept(Docket *docket, int fd) {
   LOGD("fd = %d", fd);
@@ -79,9 +77,9 @@ int docket_accept(Docket *docket, int fd) {
 
   // update event to read write mod
   DocketEvent *event = DocketEvent_new(docket, remote_fd, NULL);
-  event->ev = DEVENT_READ_WRITE;
+  event->ev = DEVENT_READ_WRITE_ET;
 
-  devent_update_events(docket->fd, remote_fd, event->ev, 0);
+  devent_update_events(docket->fd, remote_fd, event->ev, DEVENT_MOD_ADD);
 
   // create event
   event->connected = true;
@@ -90,21 +88,7 @@ int docket_accept(Docket *docket, int fd) {
   // listener callback
   DocketListener *listener = Docket_get_listener(docket, fd);
   if (listener) {
-#ifdef DEVENT_SSL
-    if (listener->ssl_ctx) {
-      // TODO listener ssl
-//      event->ssl_handshaking = true;
-//      event->ssl = SSL_new(docket->ssl_ctx);
-//      SSL_set_fd(event->ssl, event->fd);
-//      SSL_set_accept_state(event->ssl);
-//
-//      // delay connect callback after ssl handshake
-//      event->listener = listener;
-    } else
-#endif
-    {
-      listener->cb(listener, remote_fd, (struct sockaddr *) &remote_address, remote_address_len, event, listener->ctx);
-    }
+    listener->cb(listener, remote_fd, (struct sockaddr *) &remote_address, remote_address_len, event, listener->ctx);
   }
 
   return 0;

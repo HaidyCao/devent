@@ -8,6 +8,8 @@
 #include "file_event.h"
 #include "event_def.h"
 
+#ifdef WIN32
 void DocketEvent_readFile(DocketEvent *event, IO_CONTEXT *io);
+#endif
 
 #endif //DOCKET_DEVENT_FILE_EVENT_INTERNAL_H_

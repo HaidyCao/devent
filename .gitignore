@@ -11,3 +11,4 @@ release
 /cmake-build-debug-cygwin/
 .vs
 /cmake-build-debug-mingw/
+/cmake-build-debug-wsl/

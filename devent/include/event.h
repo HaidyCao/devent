@@ -24,6 +24,12 @@
 #define DEVENT_EOF 16
 #define DEVENT_OPENSSL 32
 
+/**
+ * used for epoll ET event
+ */
+#define DEVENT_ET 1u << 31
+#define DEVENT_READ_WRITE_ET DEVENT_READ_WRITE | DEVENT_ET
+
 #define DEVENT_CONNECT_SSL DEVENT_CONNECT | DEVENT_OPENSSL
 #define DEVENT_READ_EOF DEVENT_READ | DEVENT_EOF
 
@@ -37,14 +43,6 @@ typedef void (*docket_event_callback)(DocketEvent *ev, int what, void *ctx);
 typedef void (*docket_event_read_callback)(DocketEvent *ev, void *ctx);
 
 typedef void (*docket_event_write_callback)(DocketEvent *ev, void *ctx);
-
-#ifdef DEVENT_SSL
-typedef void (*docket_event_ssl_callback)(DocketEventSSL *ev, int what, void *ctx);
-
-typedef void (*docket_event_ssl_read_callback)(DocketEventSSL *ev, void *ctx);
-
-typedef void (*docket_event_ssl_write_callback)(DocketEventSSL *ev, void *ctx);
-#endif
 
 /**
  *
@@ -65,28 +63,28 @@ void DocketEvent_set_event_cb(DocketEvent *event, docket_event_callback cb, void
 
 #ifdef DEVENT_SSL
 
-void DocketEvent_set_ssl_read_cb(DocketEventSSL *event, docket_event_ssl_read_callback cb, void *ctx);
+//void DocketEvent_set_ssl_read_cb(DocketEventSSL *event, docket_event_ssl_read_callback cb, void *ctx);
+//
+//void DocketEvent_set_ssl_write_cb(DocketEventSSL *event, docket_event_ssl_write_callback cb, void *ctx);
+//
+//void DocketEvent_set_ssl_event_cb(DocketEventSSL *event, docket_event_ssl_callback cb, void *ctx);
 
-void DocketEvent_set_ssl_write_cb(DocketEventSSL *event, docket_event_ssl_write_callback cb, void *ctx);
-
-void DocketEvent_set_ssl_event_cb(DocketEventSSL *event, docket_event_ssl_callback cb, void *ctx);
-
-/**
- * read data from event ssl
- * @param event event
- * @param data  data
- * @param len   length of data
- * @return length of data read from event, or -1 if read failed
- */
-ssize_t DocketEventSSL_read(DocketEventSSL *event, char *data, size_t len);
-
-/**
- * write data to event ssl
- * @param event event
- * @param data  data
- * @param len   length of data
- */
-void DocketEventSSL_write(DocketEventSSL *event, const char *data, size_t len);
+///**
+// * read data from event ssl
+// * @param event event
+// * @param data  data
+// * @param len   length of data
+// * @return length of data read from event, or -1 if read failed
+// */
+//ssize_t DocketEventSSL_read(DocketEventSSL *event, char *data, size_t len);
+//
+///**
+// * write data to event ssl
+// * @param event event
+// * @param data  data
+// * @param len   length of data
+// */
+//void DocketEventSSL_write(DocketEventSSL *event, const char *data, size_t len);
 
 #endif
 
@@ -103,21 +101,21 @@ DocketEvent_set_cb(DocketEvent *event, docket_event_read_callback read_cb, docke
  * @param data  data
  * @param len   length of data
  */
-void DocketEvent_write(DocketEvent *event, const char *data, size_t len);
+ssize_t DocketEvent_write(DocketEvent *event, const char *data, size_t len);
 
 /**
  * write buffer to
  * @param event     event
  * @param buffer    buffer
  */
-void DocketEvent_write_buffer(DocketEvent *event, DocketBuffer *buffer);
+ssize_t DocketEvent_write_buffer(DocketEvent *event, DocketBuffer *buffer);
 
 /**
  * force write buffer to
  * @param event     event
  * @param buffer    buffer
  */
-void DocketEvent_write_buffer_force(DocketEvent *event, DocketBuffer *buffer);
+ssize_t DocketEvent_write_buffer_force(DocketEvent *event, DocketBuffer *buffer);
 
 /**
  * read data from event

@@ -13,7 +13,7 @@
 #include "def.h"
 #include "win_def.h"
 
-void devent_write_data(DocketEvent *event, DocketBuffer *buffer);
+ssize_t devent_write_data(DocketEvent *event, DocketBuffer *buffer);
 
 /**
  * on event write

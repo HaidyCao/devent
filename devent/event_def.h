@@ -59,9 +59,9 @@ struct docket_event {
   void *ctx;
 
   /**
-   * dns event
+   * read write
    */
-  DocketDnsEvent *dns_event;
+  unsigned int ev;
 
   /**
    * is connected
@@ -72,16 +72,11 @@ struct docket_event {
   bool is_file;
 #endif
 
-  /**
-   * read write
-   */
-  unsigned char ev;
-
 #ifdef DEVENT_SSL
   /**
    * is ssl event
    */
-  DocketEventSSL *ssl;
+  bool ssl;
 #endif
 };
 

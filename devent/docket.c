@@ -162,16 +162,6 @@ void Docket_add_event(DocketEvent *event) {
   CSparseArray_put(docket->events, event->fd, event);
 }
 
-void Docket_add_dns_event(DocketDnsEvent *event) {
-  Docket *docket = event->docket;
-  CSparseArray_put(docket->dns_events, event->dns_fd, event);
-}
-
-void Docket_remove_dns_event(DocketDnsEvent *event) {
-  Docket *docket = event->docket;
-  CSparseArray_remove(docket->dns_events, event->dns_fd);
-}
-
 void Docket_remove_event(DocketEvent *event) {
   Docket *docket = event->docket;
   CSparseArray_remove(docket->events, event->fd);

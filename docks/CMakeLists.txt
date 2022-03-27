@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.10)
 project(docks C)
 
 set(CMAKE_C_STANDARD 99)
@@ -26,7 +26,6 @@ add_library(
 
         ${WIN_SRC}
         ../dlib/log.c
-        utils.c
         server.c
         server_context.c
         method.c
@@ -44,7 +43,6 @@ add_executable(
         ../dlib/log.c
         docks_server.c
         server_config.c
-        utils.c
         server.c
         server_context.c
         method.c
@@ -63,7 +61,6 @@ add_executable(
         ${WIN_SRC}
         ../dlib/log.c
         server_config.c
-        utils.c
         server.c
         server_context.c
         method.c

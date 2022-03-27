@@ -56,18 +56,6 @@ DocketEvent *Docket_find_event(Docket *docket, SOCKET fd);
 void Docket_add_event(DocketEvent *event);
 
 /**
- * add dns event to docket
- * @param event dns event
- */
-void Docket_add_dns_event(DocketDnsEvent *event);
-
-/**
- * remove dns event from docket
- * @param event dns event
- */
-void Docket_remove_dns_event(DocketDnsEvent *event);
-
-/**
  * remove event from docket
  * @param event event
  */

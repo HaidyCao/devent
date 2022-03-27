@@ -10,13 +10,7 @@
 typedef int SOCKET;
 #endif
 
-typedef struct docket_dns_event DocketDnsEvent;
-
 typedef struct docket_event DocketEvent;
-
-#ifdef DEVENT_SSL
-typedef struct docket_event_ssl DocketEventSSL;
-#endif
 
 /**
  * define Docket struct

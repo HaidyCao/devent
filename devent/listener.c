@@ -6,6 +6,7 @@
 #ifndef WIN32
 #include <sys/fcntl.h>
 #else
+#include "accept.h"
 #endif
 
 #include "listener_def.h"
@@ -21,11 +22,7 @@
 
 static DocketListener *
 Docket_create_listener_internal(Docket *docket,
-#ifdef DEVENT_SSL
-    SSL_CTX *ssl_ctx,
-    int (*cert_verify_callback)(X509_STORE_CTX *, void *),
-#endif
-                                docket_connect_cb cb,
+                                docket_accept_cb cb,
                                 SOCKET fd,
                                 struct sockaddr *address, socklen_t socklen,
                                 void *ctx) {
@@ -65,7 +62,7 @@ Docket_create_listener_internal(Docket *docket,
 
 #ifndef WIN32
   devent_turn_on_flags(fd, O_NONBLOCK);
-  devent_update_events(docket->fd, fd, DEVENT_READ_WRITE, 0);
+  devent_update_events(docket->fd, fd, DEVENT_READ, DEVENT_MOD_ADD);
 #else
   CreateIoCompletionPort((HANDLE) fd, docket->fd, fd, 0);
 
@@ -77,35 +74,62 @@ Docket_create_listener_internal(Docket *docket,
   docket_accept(docket, fd, acceptSocket, io);
 #endif
 
-#ifdef DEVENT_SSL
-  listener->ssl_ctx = ssl_ctx;
-  if (ssl_ctx) {
-    SSL_CTX_set_cert_verify_callback(ssl_ctx, cert_verify_callback, ctx);
-  }
-#endif
-
   Docket_add_listener(docket, listener);
   return listener;
 }
 
 #ifdef DEVENT_SSL
+#include "event_ssl.h"
+
+static DocketSSLListenerContext *DocketSSLListenerContext_new(SSL_CTX *ssl_ctx, docket_accept_cb cb, void *ctx) {
+  DocketSSLListenerContext *ssl_listener_context = calloc(1, sizeof(DocketSSLListenerContext));
+  ssl_listener_context->ssl_ctx = ssl_ctx;
+  ssl_listener_context->cb = cb;
+  ssl_listener_context->ctx = ctx;
+
+  return ssl_listener_context;
+}
+
+static void on_ssl_connect_cb(DocketListener *l, SOCKET fd,
+                              struct sockaddr *address,
+                              socklen_t address_len, DocketEvent *event,
+                              void *arg) {
+  DocketEventSSLContext *ssl_context = DocketEventSSLContext_new(l->ssl_ctx, address, address_len);
+  ssl_context->listener = l;
+  ssl_context->ssl_accept_cb = arg;
+
+  DocketEvent_set_cb(event, docket_on_ssl_read, docket_on_ssl_write, docket_on_ssl_event, ssl_context);
+  event->ssl = true;
+
+  SSL_set_accept_state(ssl_context->ssl);
+}
 
 DocketListener *
 Docket_create_ssl_listener(Docket *docket,
                            SSL_CTX *ssl_ctx,
                            int (*cert_verify_callback)(X509_STORE_CTX *, void *),
-                           docket_connect_cb cb,
+                           docket_accept_cb cb,
                            int fd,
                            struct sockaddr *address,
                            socklen_t socklen,
-                           void *ctx) {
-  return Docket_create_listener_internal(docket, ssl_ctx, cert_verify_callback, cb, fd, address, socklen, ctx);
+                           void *arg) {
+
+  DocketListener *listener = Docket_create_listener_internal(docket,
+                                                             on_ssl_connect_cb,
+                                                             fd,
+                                                             address,
+                                                             socklen,
+                                                             cb);
+  listener->ssl_ctx = ssl_ctx;
+  listener->ssl_arg = arg;
+  SSL_CTX_set_cert_verify_callback(ssl_ctx, cert_verify_callback, arg);
+  return listener;
 }
 
 DocketListener *
 Docket_create_ssl_listener_by_path(Docket *docket, const char *cert_path, const char *key_path,
                                    int (*cert_verify_callback)(X509_STORE_CTX *, void *),
-                                   docket_connect_cb cb,
+                                   docket_accept_cb cb,
                                    int fd, struct sockaddr *address,
                                    socklen_t socklen, void *ctx) {
   SSL_library_init();
@@ -137,17 +161,13 @@ Docket_create_ssl_listener_by_path(Docket *docket, const char *cert_path, const 
     return NULL;
   }
 
-  return Docket_create_listener_internal(docket, ssl_ctx, cert_verify_callback, cb, fd, address, socklen, ctx);
+  return Docket_create_ssl_listener(docket, ssl_ctx, cert_verify_callback, cb, fd, address, socklen, ctx);
 }
 
 #endif
 
 DocketListener *
-Docket_create_listener(Docket *docket, docket_connect_cb cb, int fd, struct sockaddr *address, socklen_t socklen,
+Docket_create_listener(Docket *docket, docket_accept_cb cb, int fd, struct sockaddr *address, socklen_t socklen,
                        void *ctx) {
-  return Docket_create_listener_internal(docket,
-#ifdef DEVENT_SSL
-      NULL, NULL,
-#endif
-                                         cb, fd, address, socklen, ctx);
+  return Docket_create_listener_internal(docket, cb, fd, address, socklen, ctx);
 }

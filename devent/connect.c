@@ -166,9 +166,9 @@ DocketEvent_connect_internal(Docket *docket,
     // add event to docket
     Docket_add_event(event);
   }
-  event->ev = DEVENT_READ_WRITE;
+  event->ev = DEVENT_READ_WRITE_ET;
 
-  if (devent_update_events(docket->fd, fd, event->ev, 0) == -1) {
+  if (devent_update_events(docket->fd, fd, event->ev, DEVENT_MOD_ADD) == -1) {
     return NULL;
   }
 
@@ -273,35 +273,31 @@ DocketEvent *DocketEvent_create_udp(Docket *docket, SOCKET fd, struct sockaddr *
 }
 
 #ifdef DEVENT_SSL
-static DocketEventSSL *prepare_and_get_event_ssl(DocketEvent *event) {
-  if (event->ssl) {
-    return event->ssl;
+static void prepare_and_get_event_ssl(DocketEvent *event) {
+  if (event == NULL || event->ssl) {
+    return;
   }
 
-  event->read_cb = docket_on_ssl_read;
-  event->write_cb = docket_on_ssl_write;
-  event->event_cb = docket_on_ssl_event;
-  DocketEventSSLContext *event_ssl_context = DocketEventSSLContext_new(event->docket->ssl_ctx);
+  DocketEventSSLContext *event_ssl_context = DocketEventSSLContext_new(event->docket->ssl_ctx, false, 0);
+  DocketEvent_set_cb(event, docket_on_ssl_read, docket_on_ssl_write, docket_on_ssl_event, event_ssl_context);
+  event->ssl = true;
+
   SSL_set_connect_state(event_ssl_context->ssl);
-  event->ctx = event_ssl_context;
-  DocketEventSSL *event_ssl = DocketEventSSL_new(event);
-
-  return event_ssl;
 }
 
-DocketEventSSL *DocketEvent_connect_ssl(Docket *docket, SOCKET fd, struct sockaddr *address, socklen_t socklen) {
+DocketEvent *DocketEvent_connect_ssl(Docket *docket, SOCKET fd, struct sockaddr *address, socklen_t socklen) {
   DocketEvent *event = DocketEvent_connect_internal(docket, fd, SOCK_STREAM, address, socklen);
-  if (event) return prepare_and_get_event_ssl(event);
-  return NULL;
+  prepare_and_get_event_ssl(event);
+  return event;
 }
 
-DocketEventSSL *DocketEvent_connect_hostname_ssl(Docket *docket,
+DocketEvent *DocketEvent_connect_hostname_ssl(Docket *docket,
                                                  int fd,
                                                  const char *host,
                                                  unsigned short port) {
   DocketEvent *event = DocketEvent_connect_hostname_internal(docket, fd, host, port, true);
-  if (event) return prepare_and_get_event_ssl(event);
-  return NULL;
+  prepare_and_get_event_ssl(event);
+  return event;
 }
 
 #endif
@@ -317,11 +313,12 @@ DocketEvent *DocketEvent_connect_hostname(Docket *docket, SOCKET fd, const char 
 DocketEvent *DocketEvent_create(Docket *docket, SOCKET fd) {
   DocketEvent *event = DocketEvent_new(docket, fd, NULL);
   event->connected = true;
+  event->ev = DEVENT_READ_WRITE_ET;
 
 #ifdef WIN32
 #else
   devent_turn_on_flags(fd, O_NONBLOCK);
-  devent_update_events(docket->fd, fd, DEVENT_READ_WRITE, 0);
+  devent_update_events(docket->fd, fd, event->ev, DEVENT_MOD_ADD);
 #endif
 
   Docket_add_event(event);

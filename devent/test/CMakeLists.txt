@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.10)
 project(devent_test C)
 
 set(CMAKE_C_STANDARD 99)
@@ -37,7 +37,8 @@ if (WIN32)
             coll
             Crypt32
     )
-endif()
+    set(CRYPT32 "Crypt32")
+endif ()
 
 target_link_libraries(
         devent_test
@@ -45,4 +46,5 @@ target_link_libraries(
         devent
         cdns
         coll
+        ${CRYPT32}
 )

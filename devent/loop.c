@@ -3,14 +3,9 @@
 //
 
 #ifdef __APPLE__
-
 #include <sys/event.h>
-#include <unistd.h>
-
 #elif __linux__ || __ANDROID__
-
 #include <sys/epoll.h>
-
 #endif
 
 #include "def.h"
@@ -28,8 +23,50 @@
 #include "win_def.h"
 #include "listener_def.h"
 #include "file_event_internal.h"
+#include "utils_internal.h"
 
 #define MAX_EVENT 16
+
+#ifndef WIN32
+#include <unistd.h>
+
+static void on_listen(DocketListener *listener) {
+
+}
+
+static void on_event_write(Docket *docket, SOCKET efd) {
+  DocketEvent *event = Docket_find_event(docket, efd);
+  if (event == NULL) {
+    LOGD("event is NULL: fd = %d", efd);
+    close(efd);
+    return;
+  }
+
+  if (!event->connected) {
+    event->connected = true;
+
+    if (event->event_cb) {
+      event->event_cb(event, DEVENT_CONNECT, event->ctx);
+
+      event = Docket_find_event(docket, efd);
+      if (event == NULL) {
+        return;
+      }
+    }
+
+    // TODO timeout
+  }
+
+  docket_on_event_write(event);
+}
+
+static void on_event_read(Docket *docket, SOCKET efd) {
+  DocketEvent *event = Docket_find_event(docket, efd);
+  if (event) {
+    docket_on_event_read(event);
+  }
+}
+#endif
 
 #ifdef __APPLE__
 
@@ -64,46 +101,9 @@ static int kqueue_loop(Docket *docket) {
           docket_accept(docket, efd);
           continue;
         }
-        DocketDnsEvent *dns = CSparseArray_get(docket->dns_events, efd);
-        if (dns != NULL) {
-          devent_dns_read(dns);
-          continue;
-        }
-        // TODO event read
-        DocketEvent *event = Docket_find_event(docket, efd);
-        if (event) {
-          docket_on_event_read(event);
-        }
+        on_event_read(docket, efd);
       } else if (filter == EVFILT_WRITE) {
-        DocketDnsEvent *dns = CSparseArray_get(docket->dns_events, efd);
-        if (dns != NULL) {
-          devent_dns_write(dns);
-          continue;
-        }
-
-        DocketEvent *event = Docket_find_event(docket, efd);
-        if (event == NULL) {
-          LOGD("event is NULL: fd = %d", efd);
-          close(efd);
-          continue;
-        }
-
-        if (!event->connected) {
-          event->connected = true;
-
-          if (event->event_cb) {
-            event->event_cb(event, DEVENT_CONNECT, event->ctx);
-
-            event = Docket_find_event(docket, efd);
-            if (event == NULL) {
-              continue;
-            }
-          }
-
-          // TODO timeout
-        }
-
-        docket_on_event_write(event);
+        on_event_write(docket, efd);
       } else {
         // unknown filter
       }
@@ -112,27 +112,52 @@ static int kqueue_loop(Docket *docket) {
 }
 
 #elif __linux__ || __ANDROID__
-int epoll_loop(Docket *docket) {
-    struct epoll_event events[MAX_EVENT];
-    bzero(events, sizeof(events));
-    while (true) {
-        if (docket->fd == -1) {
-            return -1;
-        }
-        int n = epoll_wait(docket->fd, events, MAX_EVENT, -1);
+#include <strings.h>
 
-        for (int i = 0; i < n; ++i) {
-            uint32_t ev = events[i].events;
-            int event_fd = events[i].data.fd;
-
-            if ((ev & EPOLLERR) || (ev & EPOLLHUP)) {
-                // epoll error
-                continue;
-            }
-
-
-        }
+void epoll_loop(Docket *docket) {
+  struct epoll_event events[MAX_EVENT];
+  bzero(events, sizeof(events));
+  while (true) {
+    if (docket->fd == -1) {
+      return;
     }
+    int n = epoll_wait(docket->fd, events, MAX_EVENT, -1);
+    if (n == -1) {
+      LOGE("epoll_wait failed: errno = %s", devent_errno());
+      continue;
+    }
+
+    for (int i = 0; i < n; ++i) {
+      uint32_t ev = events[i].events;
+      int efd = events[i].data.fd;
+      LOGD("epoll event: fd = %d, readable = %d, writeable = %d", efd, (ev & EPOLLIN) != 0, (ev & EPOLLOUT) != 0);
+
+      if ((ev & EPOLLERR) || (ev & EPOLLHUP)) {
+        // free event after epoll error
+        DocketEvent *event = Docket_find_event(docket, efd);
+        if (event) {
+          devent_close_internal(event, DEVENT_ERROR);
+        } else {
+          close(efd);
+        }
+        continue;
+      }
+
+      DocketListener *listener = Docket_get_listener(docket, efd);
+      if (listener) {
+        docket_accept(docket, efd);
+        continue;
+      }
+
+      if (ev & EPOLLIN) {
+        // TODO timer
+        on_event_read(docket, efd);
+      }
+      if (ev & EPOLLOUT) {
+        on_event_write(docket, efd);
+      }
+    }
+  }
 }
 
 #elif WIN32
@@ -331,6 +356,10 @@ static void iocp_loop(Docket *docket) {
       }
     } else {
       LOGD("GetQueuedCompletionStatus error");
+      DocketEvent *event = Docket_find_event(docket, client);
+      if (event) {
+        DocketEvent_free(event);
+      }
     }
   }
 }

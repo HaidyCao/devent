@@ -5,6 +5,7 @@
 #include "file_event_internal.h"
 #include "docket.h"
 #include "log.h"
+#include "utils_internal.h"
 
 #ifdef WIN32
 typedef struct {
@@ -47,9 +48,11 @@ static void win_read_file(FileIoContext *io) {
     }
   }
 }
-
+#else
+#include <unistd.h>
 #endif
 
+#ifdef WIN32
 void DocketEvent_readFile(DocketEvent *event, IO_CONTEXT *io) {
   if (!devent_read_enable(event)) {
     return;
@@ -59,7 +62,6 @@ void DocketEvent_readFile(DocketEvent *event, IO_CONTEXT *io) {
     io = IO_CONTEXT_new(IOCP_OP_READ, event->fd);
   }
 
-#ifdef WIN32
   if (!ReadFile((HANDLE) event->fd, io->buf.buf, io->buf.len, NULL, (LPOVERLAPPED) io)) {
     DWORD error = GetLastError();
     if (error != ERROR_IO_PENDING) {
@@ -69,10 +71,10 @@ void DocketEvent_readFile(DocketEvent *event, IO_CONTEXT *io) {
       return;
     }
   }
-#else
-  // TODO
-#endif
 }
+#else
+// TODO
+#endif
 
 DocketEvent *DocketEvent_create_stdin_event(Docket *docket) {
 #ifdef WIN32
@@ -96,6 +98,9 @@ DocketEvent *DocketEvent_create_stdin_event(Docket *docket) {
 
   return Docket_find_event(docket, (SOCKET) file);
 #else
-  // TODO unix
+  DocketEvent *event = DocketEvent_new(docket, STDIN_FILENO, NULL);
+  Docket_add_event(event);
+  devent_update_events(docket->fd, event->fd, DEVENT_READ, DEVENT_MOD_ADD);
+  return event;
 #endif
 }

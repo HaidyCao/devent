@@ -13,6 +13,7 @@
 #endif
 #include "utils_internal.h"
 #include "event.h"
+#include "event_def.h"
 #include "log.h"
 #include "docket.h"
 #include "docket_def.h"
@@ -54,25 +55,18 @@ int devent_turn_on_flags(int fd, int flags) {
 }
 
 #ifdef __APPLE__
-
 #include <sys/event.h>
-
+#elif __linux__ || __ANDROID__
+#include <sys/epoll.h>
 #endif
 
-/**
- * update event status
- * @param dfd docket fd
- * @param fd event fd
- * @param events event: read or write
- * @param mod 1 delete, 0 do nothing
- */
 int devent_update_events(
 #ifdef WIN32
     HANDLE handle,
 #else
     int dfd,
 #endif
-    SOCKET fd, int events, int mod) {
+    SOCKET fd, unsigned int events, int mod) {
 #ifdef __APPLE__
   struct kevent ev[2];
   int n = 0;
@@ -94,7 +88,40 @@ int devent_update_events(
   }
   return r;
 #elif __linux__ || __ANDROID__
-  // TODO
+  struct epoll_event event;
+  bzero(&event, sizeof(event));
+  event.data.fd = fd;
+
+  int op = 0;
+  if (mod == DEVENT_MOD_MOD) {
+    op = EPOLL_CTL_MOD;
+  } else if (mod == DEVENT_MOD_ADD) {
+    op = EPOLL_CTL_ADD;
+  } else if (mod == DEVENT_MOD_DEL) {
+    op = EPOLL_CTL_DEL;
+  }
+
+  if (events & DEVENT_READ) {
+    event.events = EPOLLIN;
+  }
+
+  if (events & DEVENT_WRITE) {
+    event.events |= EPOLLOUT;
+  }
+  LOGD("update event: fd = %d, readable = %d, writeable = %d",
+       fd,
+       (event.events & EPOLLIN) != 0,
+       (event.events & EPOLLOUT) != 0);
+
+  if (events & DEVENT_ET) {
+    event.events |= EPOLLET;
+  }
+
+  if (epoll_ctl(dfd, op, fd, &event) == -1) {
+    LOGD("epoll_ctl failed: errno = %d, errmsg: %s", errno, strerror(errno));
+    return -1;
+  }
+  return 0;
 #elif WIN32
   return 0;
 #endif
@@ -111,9 +138,7 @@ void devent_close_internal(DocketEvent *event, int what) {
   if (event->ssl) {
     DocketEventSSLContext *ssl_context = event->ctx;
     if (ssl_context && ssl_context->ssl_event_cb) {
-      DocketEventSSL event_ssl;
-      event_ssl.event = event;
-      ssl_context->ssl_event_cb(&event_ssl, what, ssl_context->ssl_ctx);
+      ssl_context->ssl_event_cb(event, what, ssl_context->ssl_ctx);
     }
   } else
 #endif
@@ -163,37 +188,14 @@ bool devent_parse_ipv4(const char *ip, unsigned char *result) {
   return true;
 }
 
-bool devent_do_ssl_handshake(DocketEvent *event) {
-  // TODO SSL on windows
-//#ifdef DEVENT_SSL
-//  if (event->ssl && event->ssl_handshaking) {
-//#ifdef WIN32
-//
-//#else
-//    int r = SSL_do_handshake(event->ssl);
-//    if (r != 1) {
-//      int err = SSL_get_error(event->ssl, r);
-//      if (err != SSL_ERROR_WANT_READ && err != SSL_ERROR_WANT_WRITE) {
-//        LOGE("SSL error: %s", ERR_error_string(err, NULL));
-//        devent_close_internal(event, DEVENT_CONNECT | DEVENT_ERROR | DEVENT_OPENSSL);
-//      }
-//      return false;
-//    }
-//#endif
-//    event->ssl_handshaking = false;
-//
-//    if (event->listener && event->listener->cb) {
-//      struct sockaddr_storage address;
-//      socklen_t socklen = sizeof(address);
-//      getpeername(event->fd, (struct sockaddr *) &address, &socklen);
-//      event->listener->cb(event->listener,
-//                          event->fd,
-//                          (struct sockaddr *) &address,
-//                          socklen,
-//                          event,
-//                          event->listener->ctx);
-//    }
-//  }
-//#endif
-  return true;
+char *docket_memdup(const char *data, unsigned int len) {
+  if (data == NULL) {
+    return NULL;
+  }
+  char *mem = malloc(len);
+  if (mem == NULL) {
+    return NULL;
+  }
+  memcpy(mem, data, len);
+  return mem;
 }

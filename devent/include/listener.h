@@ -23,12 +23,12 @@
 
 #endif
 
-typedef void (*docket_connect_cb)(DocketListener *l, SOCKET fd,
-                                  struct sockaddr *address,
-                                  socklen_t address_len, DocketEvent *event,
-                                  void *ctx);
+typedef void (*docket_accept_cb)(DocketListener *l, SOCKET fd,
+                                 struct sockaddr *address,
+                                 socklen_t address_len, DocketEvent *event,
+                                 void *ctx);
 
-DocketListener *Docket_create_listener(Docket *docket, docket_connect_cb cb,
+DocketListener *Docket_create_listener(Docket *docket, docket_accept_cb cb,
                                        int fd, struct sockaddr *address,
                                        socklen_t socklen, void *ctx);
 
@@ -36,14 +36,14 @@ DocketListener *Docket_create_listener(Docket *docket, docket_connect_cb cb,
 
 DocketListener *Docket_create_ssl_listener(Docket *docket, SSL_CTX *ssl_ctx,
                                            int (*cert_verify_callback)(X509_STORE_CTX *, void *),
-                                           docket_connect_cb cb, int fd,
+                                           docket_accept_cb cb, int fd,
                                            struct sockaddr *address,
-                                           socklen_t socklen, void *ctx);
+                                           socklen_t socklen, void *arg);
 
 DocketListener *Docket_create_ssl_listener_by_path(
     Docket *docket, const char *cert_path, const char *key_path,
     int (*cert_verify_callback)(X509_STORE_CTX *, void *),
-    docket_connect_cb cb, int fd, struct sockaddr *address, socklen_t socklen,
+    docket_accept_cb cb, int fd, struct sockaddr *address, socklen_t socklen,
     void *ctx);
 
 #endif
