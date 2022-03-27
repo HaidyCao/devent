@@ -284,7 +284,7 @@ ssize_t DocketBuffer_send(DocketEvent *event, SOCKET fd, int flags, DocketBuffer
   IO_CONTEXT *io = IO_CONTEXT_new(IOCP_OP_WRITE, fd);
 
   io->buf.buf = malloc(head->len);
-  io->buf.len = head->len;
+  io->buf.len = (ULONG) head->len;
   memcpy(io->buf.buf, head->data + head->pos, head->len);
   wr = (ssize_t) head->len;
 
@@ -296,21 +296,21 @@ ssize_t DocketBuffer_send(DocketEvent *event, SOCKET fd, int flags, DocketBuffer
     }
   }
 #else
-  if (event->remote_address) {
-    LOGD("send to: %s, len: %d", sockaddr_to_string(event->remote_address, NULL, 0), event->remote_address_len);
-    wr = sendto(fd, head->data + head->pos, head->len, flags, event->remote_address, event->remote_address_len);
-  } else {
-    LOGD("send");
-    wr = send(fd, head->data + head->pos, head->len, flags);
-  }
+    if (event->remote_address) {
+      LOGD("send to: %s, len: %d", sockaddr_to_string(event->remote_address, NULL, 0), event->remote_address_len);
+      wr = sendto(fd, head->data + head->pos, head->len, flags, event->remote_address, event->remote_address_len);
+    } else {
+      LOGD("send");
+      wr = send(fd, head->data + head->pos, head->len, flags);
+    }
 
-  if (wr == -1 && errno == ENOTSOCK) {
-    wr = write(fd, head->data + head->pos, head->len);
-  }
+    if (wr == -1 && errno == ENOTSOCK) {
+      wr = write(fd, head->data + head->pos, head->len);
+    }
 
-  if (wr == -1 || wr == 0) {
-    return -1;
-  }
+    if (wr == -1 || wr == 0) {
+      return -1;
+    }
 #endif
 
   LOCK(buffer, {

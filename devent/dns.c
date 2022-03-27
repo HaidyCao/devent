@@ -90,7 +90,7 @@ void docket_dns_read(DocketEvent *dns_event) {
   }
 
   struct hostent *host = NULL;
-  if (c_dns_parse_a(dns_buffer, size, &host) != 0) {
+  if (c_dns_parse_a(dns_buffer, (unsigned int) size, &host) != 0) {
     LOGE("parse %s failed: %s", sockaddr_to_string(dns_address, NULL, 0), devent_errno());
     on_dns_failed(dns_event, dns_context);
     return;

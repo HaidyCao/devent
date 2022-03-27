@@ -28,7 +28,7 @@ struct c_sparse_array {
     Node *nodes;
 };
 
-CSparseArray *CSparseArray_new() {
+CSparseArray *CSparseArray_new(void) {
     CSparseArray *array = malloc(sizeof(CSparseArray));
     array->cap = C_SPARSE_ARRAY_DEFAULT_CAP;
     array->len = 0;
@@ -53,7 +53,7 @@ int CSparseArray_clear(CSparseArray *array, c_sparse_array_value_free_cb cb) {
     if (array == NULL) return -1;
 
     if (cb) {
-        for (int i = 0; i < array->len; ++i) {
+        for (uint64_t i = 0; i < array->len; ++i) {
             if (array->nodes[i].value) {
                 cb(array->nodes[i].value);
             }
@@ -168,7 +168,7 @@ void *CSparseArray_remove(CSparseArray *array, int64_t key) {
     }
 
     void *v = array->nodes[index].value;
-    for (int64_t i = index; i < array->len - 1; ++i) {
+    for (uint64_t i = index; i < array->len - 1; ++i) {
         array->nodes[i] = array->nodes[i + 1];
     }
     array->len--;
