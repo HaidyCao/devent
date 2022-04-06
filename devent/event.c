@@ -120,6 +120,12 @@ void devent_set_read_enable(DocketEvent *event, bool enable) {
   }
 }
 
+void DocketEvent_set_read_zero_enable(DocketEvent *event, bool enable) {
+  if (event) {
+    event->read_zero_enable = enable;
+  }
+}
+
 void
 DocketEvent_set_cb(DocketEvent *event, docket_event_read_callback read_cb, docket_event_write_callback write_cb,
                    docket_event_callback event_cb,

@@ -5,6 +5,10 @@
 #ifndef DOCKET_CONNECT_H
 #define DOCKET_CONNECT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdbool.h>
 #ifdef WIN32
 #include <WinSock2.h>
@@ -72,6 +76,10 @@ DocketEvent *DocketEvent_connect_ssl(Docket *docket, SOCKET fd, struct sockaddr 
  */
 DocketEvent *DocketEvent_connect_hostname_ssl(Docket *docket, int fd, const char *host, unsigned short port);
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif //DOCKET_CONNECT_H

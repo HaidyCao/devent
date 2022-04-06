@@ -5,6 +5,10 @@
 #ifndef DOCKET_EVENT_H
 #define DOCKET_EVENT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef _MSC_VER
 #include <sys/socket.h>
 #endif
@@ -90,6 +94,13 @@ void DocketEvent_set_event_cb(DocketEvent *event, docket_event_callback cb, void
 
 void devent_set_read_enable(DocketEvent *event, bool enable);
 
+/**
+ * set event can read zero length data some times
+ * @param event event
+ * @param enable if enable is false, event will be close when read zero length data
+ */
+void DocketEvent_set_read_zero_enable(DocketEvent *event, bool enable);
+
 void
 DocketEvent_set_cb(DocketEvent *event, docket_event_read_callback read_cb, docket_event_write_callback write_cb,
                    docket_event_callback event_cb,
@@ -149,5 +160,9 @@ bool DocketEvent_fetch_local_address(DocketEvent *event, struct sockaddr *addres
                                      unsigned short *port);
 
 void DocketEvent_free(DocketEvent *event);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //DOCKET_EVENT_H

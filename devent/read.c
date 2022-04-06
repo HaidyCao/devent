@@ -58,6 +58,10 @@ void docket_on_event_read(DocketEvent *event) {
     } else {
       len = read(fd, buf, DEVENT_READ_BUFFER_SIZE);
       LOGD("fd = %d, read: length = %d", event->fd, len);
+
+      if (len == 0) {
+        LOGD("errno = %s", devent_errno());
+      }
     }
 
     if (len <= 0) {
@@ -77,11 +81,13 @@ void docket_on_event_read(DocketEvent *event) {
     }
   } while (devent_read_enable(event));
 
-  if (len > 0 || (len == -1 && (errno_is_EAGAIN(err_number)))) {
+  if (len > 0 || (len == -1 && errno_is_EAGAIN(err_number)) || (event->read_zero_enable && len == 0)) {
     // TODO update read and write timeout
 //    devent_update_events(docket->fd, event->fd, event->ev | DEVENT_READ, DEVENT_MOD_MOD);
 
-    devent_write_data(event, event->out_buffer);
+    if (DocketBuffer_length(event->out_buffer) > 0) {
+      devent_write_data(event, event->out_buffer);
+    }
     return;
   }
 

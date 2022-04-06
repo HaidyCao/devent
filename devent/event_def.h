@@ -68,6 +68,11 @@ struct docket_event {
    */
   bool connected;
 
+  /**
+   * enable event read zero data
+   */
+  bool read_zero_enable;
+
 #ifdef WIN32
   bool is_file;
 #endif

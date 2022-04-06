@@ -5,6 +5,10 @@
 #ifndef DEVENT_UTILS_H
 #define DEVENT_UTILS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdbool.h>
 
 /**
@@ -14,5 +18,9 @@
 char *devent_errno();
 
 bool devent_parse_ipv4(const char *ip, unsigned char *result);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //DEVENT_UTILS_H

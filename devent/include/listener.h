@@ -5,6 +5,10 @@
 #ifndef DOCKET_LISTENER_H
 #define DOCKET_LISTENER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef WIN32
 #include <sys/socket.h>
 #else
@@ -46,6 +50,10 @@ DocketListener *Docket_create_ssl_listener_by_path(
     docket_accept_cb cb, int fd, struct sockaddr *address, socklen_t socklen,
     void *ctx);
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif  // DOCKET_LISTENER_H

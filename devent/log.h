@@ -21,7 +21,7 @@
 
 #define DEVENT_LOG_ERROR 2
 
-void devent_set_log_level(int level);
+void Docket_set_log_level(int level);
 
 void devent_log(int level, const char *fmt, ...);
 

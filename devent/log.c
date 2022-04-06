@@ -45,7 +45,7 @@ const char *basename(const char *path) {
 
 static int s_log_level = DEVENT_LOG_DEBUG;
 
-void devent_set_log_level(int level) {
+void Docket_set_log_level(int level) {
     s_log_level = level;
 }
 

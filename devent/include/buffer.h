@@ -5,6 +5,10 @@
 #ifndef DEVENT_BUFFER_H
 #define DEVENT_BUFFER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdlib.h>
 #ifdef WIN32
 #include <WinSock2.h>
@@ -13,7 +17,6 @@
 
 #include "../win_def.h"
 #include "def.h"
-#include "c_linked_list.h"
 
 #ifdef DEVENT_SSL
 #include "openssl/ssl.h"
@@ -86,5 +89,9 @@ ssize_t DocketBuffer_send(DocketEvent *event, SOCKET fd, int flags, DocketBuffer
  * @return length of data moved
  */
 size_t DocketBuffer_moveto(DocketBuffer *dest, DocketBuffer *from);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //DEVENT_BUFFER_H

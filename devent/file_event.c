@@ -50,6 +50,7 @@ static void win_read_file(FileIoContext *io) {
 }
 #else
 #include <unistd.h>
+#include <sys/fcntl.h>
 #endif
 
 #ifdef WIN32
@@ -76,7 +77,7 @@ void DocketEvent_readFile(DocketEvent *event, IO_CONTEXT *io) {
 // TODO
 #endif
 
-DocketEvent *DocketEvent_create_stdin_event(Docket *docket) {
+DocketEvent *Docket_create_stdin_event(Docket *docket) {
 #ifdef WIN32
   // TODO new thread
   HANDLE file = CreateFile("CONIN$", GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
@@ -99,8 +100,17 @@ DocketEvent *DocketEvent_create_stdin_event(Docket *docket) {
   return Docket_find_event(docket, (SOCKET) file);
 #else
   DocketEvent *event = DocketEvent_new(docket, STDIN_FILENO, NULL);
-  Docket_add_event(event);
+  devent_turn_on_flags(STDIN_FILENO, O_NONBLOCK);
   devent_update_events(docket->fd, event->fd, DEVENT_READ, DEVENT_MOD_ADD);
+  Docket_add_event(event);
   return event;
 #endif
+}
+
+DocketEvent *Docket_create_file_event(Docket *docket, int fd) {
+  DocketEvent *event = DocketEvent_new(docket, fd, NULL);
+  devent_turn_on_flags(fd, O_NONBLOCK);
+  devent_update_events(docket->fd, event->fd, DEVENT_READ, DEVENT_MOD_ADD);
+  Docket_add_event(event);
+  return event;
 }

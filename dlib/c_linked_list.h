@@ -1,7 +1,9 @@
 #ifndef C_LINKED_LIST_H
 #define C_LINKED_LIST_H
 
-#include <stdlib.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct c_linked_list;
 typedef struct c_linked_list CLinkedList;
@@ -45,5 +47,9 @@ int c_linked_list_merge(CLinkedList *dest, CLinkedList *src);
 int c_linked_list_reset_with_no_free(CLinkedList *list);
 
 int c_linked_list_move(CLinkedList **dest, CLinkedList *src);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

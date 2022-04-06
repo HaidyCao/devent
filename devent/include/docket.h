@@ -5,6 +5,10 @@
 #ifndef DOCKET_DOCKET_H
 #define DOCKET_DOCKET_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef WIN32
 #include <WinSock2.h>
 #include <WS2tcpip.h>
@@ -68,5 +72,11 @@ int Docket_get_dns_server(Docket *docket, struct sockaddr **address, socklen_t *
  * @return -1 loop finished
  */
 void Docket_loop(Docket *docket);
+
+void Docket_set_log_level(int level);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //DOCKET_DOCKET_H

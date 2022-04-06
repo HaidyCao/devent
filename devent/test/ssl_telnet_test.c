@@ -82,7 +82,7 @@ static void on_connect(DocketEvent *ev, int what, void *ctx) {
   scanf("%s", buffer);
   DocketEvent_write(ev, buffer, strlen(buffer));
 
-//  DocketEvent *stdin_event = DocketEvent_create_stdin_event(docket);
+//  DocketEvent *stdin_event = Docket_create_stdin_event(docket);
 //  DocketEvent_set_read_cb(stdin_event, on_stdin_read, ev);
 
 //  HANDLE file = CreateFile("CONIN$", FILE_GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, 0);
@@ -101,7 +101,7 @@ void ssl_telnet_start() {
 
   DocketEvent_set_event_cb(event, on_connect, docket);
 
-//  DocketEvent *stdin_event = DocketEvent_create_stdin_event(docket);
+//  DocketEvent *stdin_event = Docket_create_stdin_event(docket);
 //  DocketEvent_set_read_cb(stdin_event, on_stdin_read, docket);
   Docket_loop(docket);
 }
