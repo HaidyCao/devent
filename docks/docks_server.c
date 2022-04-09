@@ -10,6 +10,8 @@
 
 #ifdef WIN32
 #define bzero ZeroMemory
+#else
+#include <signal.h>
 #endif
 
 int main(int argc, char **args) {

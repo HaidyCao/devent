@@ -67,7 +67,6 @@ static int test_parse_a() {
 
   int fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
   if (sendto(fd, data, pl, 0, &addr, addr_len) == -1) {
-    LOGD("%d", WSAGetLastError());
     LOGD("sendto failed: err = %s", strerror(errno));
     return -1;
   }

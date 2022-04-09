@@ -16,7 +16,9 @@
 #define LOGE(fmt, ...) printf("[%s(%d):%s]: " fmt "\n", __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 
 #ifdef WIN32
-#define PATH_MAX 1024
+#ifndef PATH_MAX
+#define PATH_MAX 260
+#endif
 #endif
 
 static char *file_path(const char *file_name) {

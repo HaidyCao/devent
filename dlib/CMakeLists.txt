@@ -22,7 +22,6 @@ endif ()
 if (DEFINED ANDROID_ABI)
     set(OS android)
 endif ()
-message("OS = ${OS}; CMAKE_SOURCE_DIR = ${CMAKE_SOURCE_DIR}; M_OS = ${M_OS}")
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
     add_definitions("-DEVENT_LOG_DISABLED -O2")
@@ -64,7 +63,12 @@ target_link_libraries(
 # default, you only need to specify the name of the public NDK library
 # you want to add. CMake verifies that the library exists before
 # completing its build.
-
+if (MINGW)
+    set(LIB_WS2_32 "ws2_32")
+    message(LIB_WS2_32 = ${LIB_WS2_32})
+else ()
+    set(LIB_WS2_32 "")
+endif ()
 
 if (ANDROID)
     find_library( # Sets the name of the path variable.
@@ -78,6 +82,10 @@ if (ANDROID)
             ${log-lib}
     )
 else ()
+    target_link_libraries(
+            coll
+
+            ${LIB_WS2_32}
+    )
     set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/${OS})
-    install(TARGETS coll DESTINATION bin)
 endif ()

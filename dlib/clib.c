@@ -8,7 +8,11 @@
 #include <sys/time.h>
 #include <arpa/inet.h>
 #else
+#if defined(__MINGW32__) || defined(__MINGW64__)
+// do nothing
+#else
 #pragma comment(lib, "ws2_32.lib")
+#endif
 #define bzero(p, s) memset(p, 0, s);
 #endif
 

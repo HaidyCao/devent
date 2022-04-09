@@ -105,7 +105,7 @@ DocketEvent_connect_internal(Docket *docket,
     io->local = calloc(1, sizeof(struct sockaddr_storage));
     io->local->sa_family = address->sa_family;
     if (io->local->sa_family == AF_INET) {
-      ((struct sockaddr_in *) io->local)->sin_addr = in4addr_any;
+      bzero(&((struct sockaddr_in *) io->local)->sin_addr, sizeof(struct in_addr));
       ((struct sockaddr_in *) io->local)->sin_port = htons(0);
     } else if (io->local->sa_family == AF_INET6) {
       ((struct sockaddr_in6 *) io->local)->sin6_addr = in6addr_any;
@@ -292,9 +292,9 @@ DocketEvent *DocketEvent_connect_ssl(Docket *docket, SOCKET fd, struct sockaddr 
 }
 
 DocketEvent *DocketEvent_connect_hostname_ssl(Docket *docket,
-                                                 int fd,
-                                                 const char *host,
-                                                 unsigned short port) {
+                                              int fd,
+                                              const char *host,
+                                              unsigned short port) {
   DocketEvent *event = DocketEvent_connect_hostname_internal(docket, fd, host, port, true);
   prepare_and_get_event_ssl(event);
   return event;

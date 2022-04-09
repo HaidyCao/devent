@@ -58,6 +58,10 @@ static void on_connected_write(DocketEvent *event, void *ctx) {
   }
 }
 
+#ifndef sprintf_s
+#define sprintf_s(c, l, f, ...) sprintf(c, f, __VA_ARGS__)
+#endif
+
 static void hexDump(char *buf, int len, int addr) {
   int i, j, k;
   char binstr[80];

@@ -1,0 +1,10 @@
+//
+// Created by haidy on 2022/4/9.
+//
+
+#ifndef DOCKET_DOCKS_CONFIG_H_IN_
+#define DOCKET_DOCKS_CONFIG_H_IN_
+
+#define USE_SYSTEM_STRCASECMP ${USE_SYSTEM_STRCASECMP}
+
+#endif //DOCKET_DOCKS_CONFIG_H_IN_

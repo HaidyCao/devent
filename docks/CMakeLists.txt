@@ -7,7 +7,7 @@ include_directories(../dlib)
 include_directories(../devent/include include)
 
 string(TOLOWER ${CMAKE_HOST_SYSTEM_NAME} OS)
-message("docks OS = ${OS}")
+message("docks OS = ${OS} SYSTEM = ${CMAKE_SYSTEM}")
 
 option(DEVENT_SSL_ENABLE "openssl enable" 1)
 add_definitions("-DDEVENT_SSL")
@@ -19,6 +19,7 @@ if (WIN32)
 
             ../getopt.c
     )
+    set(USE_SYSTEM_STRCASECMP 1)
 endif ()
 
 add_library(
@@ -77,6 +78,12 @@ add_executable(
 if(WIN32)
 set(WIN_CRYPT "Crypt32")
 endif(WIN32)
+
+configure_file(
+        config.h.in
+
+        config.h
+)
 
 target_link_libraries(
         docks

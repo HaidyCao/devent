@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-#ifndef _MSC_VER
+#ifndef WIN32
 #include <sys/socket.h>
 #endif
 #include <stdlib.h>

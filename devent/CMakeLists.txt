@@ -28,8 +28,13 @@ add_library(devent
 add_subdirectory(test)
 
 if (WIN32)
-    set(LIB_SSL "libssl.lib")
-    set(LIB_CRYPTO "libcrypto.lib")
+    if (MINGW)
+        set(LIB_SSL "libssl.a")
+        set(LIB_CRYPTO "libcrypto.a")
+    else ()
+        set(LIB_SSL "libssl.lib")
+        set(LIB_CRYPTO "libcrypto.lib")
+    endif ()
 else (WIN32)
     set(LIB_SSL "libssl.a")
     set(LIB_CRYPTO "libcrypto.a")
@@ -39,22 +44,27 @@ if (DEVENT_SSL_ENABLE)
     add_definitions("-DDEVENT_SSL")
     message("Devent ssl is enable")
 
-    message("find ssl from: ${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/${OS}/lib/")
+    string(REGEX REPLACE "(.*/)\(.*\)" "\\1" DEVENT_C_COMPILER_DIR ${CMAKE_C_COMPILER})
+#    set(CMAKE_LIBRARY_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/${OS}/lib/)
+
+    message("find ssl from: ../dependencies/${OS}/lib/")
+    message("find ssl from: ../dependencies/${OS}/bin/")
+    message("LIB_SSL = ${LIB_SSL}, LIB_CRYPTO = ${LIB_CRYPTO}")
 
     find_library(
             OPENSSL_SSL
             ${LIB_SSL}
 
-            ${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/${OS}/lib/
-            ${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/${OS}/bin/
+            ../dependencies/${OS}/lib/
+            ../dependencies/${OS}/bin/
     )
 
     find_library(
             OPENSSL_CRYPTO
             ${LIB_CRYPTO}
 
-            ${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/${OS}/lib/
-            ${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/${OS}/bin/
+            ../dependencies/${OS}/lib/
+            ../dependencies/${OS}/bin/
     )
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/${OS}/include)
@@ -67,7 +77,14 @@ if (WIN32)
     set(LIBRESOLV "")
     set(LIB_PTHREAD "")
     set(LIB_DL "")
+    if (MINGW)
+        set(LIBIPHLPAPI "IPHLPAPI")
+        SET(LIBWSOCK32 "wsock32")
+    else ()
+        set(LIBIPHLPAPI "")
+    endif ()
 else ()
+    set(LIBIPHLPAPI "")
     set(LIBRESOLV "resolv")
     find_library(LIB_PTHREAD pthread)
     find_library(LIB_DL dl)
@@ -95,6 +112,8 @@ target_link_libraries(
 
         # libresolv
         ${LIBRESOLV}
+        ${LIBIPHLPAPI}
+        ${LIBWSOCK32}
 )
 
 add_dependencies(

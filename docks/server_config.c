@@ -104,10 +104,11 @@ static void parse_users(const char *path, ServerConfig *config) {
 }
 
 #ifdef WIN32
-
-static int strcasecmp(char *str1, char *str2) {
+#if !defined(__MINGW32__) && !defined(__MINGW64__)
+static int strcasecmp(const char *str1, const char *str2) {
   return _stricmp(str1, str2);
 }
+#endif
 
 #endif
 

@@ -18,10 +18,11 @@
 #define VAL_SSL_CERT_PATH 2
 
 #ifdef WIN32
-
+#if !defined(__MINGW32__) && !defined(__MINGW64__)
 static int strcasecmp(char *str1, char *str2) {
   return _stricmp(str1, str2);
 }
+#endif
 
 #endif
 
@@ -53,29 +54,29 @@ int init_client_config(ClientConfig *config, int argc, char **args) {
   int opt;
   while ((opt = getopt_long(argc, args, "a:H:P:u:p:sl:h", long_options, NULL)) != -1) {
     switch (opt) {
-    case 'a':config->address = strdup(optarg);
-      break;
-    case 'H':config->remote_host = strdup(optarg);
-      break;
-    case 'P':config->remote_port = strtol(optarg, NULL, 10);
-      break;
-    case 'u':config->username = strdup(optarg);
-      break;
-    case 'p': config->password = strdup(optarg);
-      break;
-    case 's':config->ssl = true;
-      break;
-    case 'l':
-      if (strcasecmp(optarg, "debug") == 0) {
-        set_log_level(LIB_LOG_DEBUG);
-      } else if (strcasecmp(optarg, "info") == 0) {
-        set_log_level(LIB_LOG_INFO);
-      } else if (strcasecmp(optarg, "error") == 0) {
-        set_log_level(LIB_LOG_ERROR);
-      }
-      break;
-    case 'h':docks_usage();
-    default:return -1;
+      case 'a':config->address = strdup(optarg);
+        break;
+      case 'H':config->remote_host = strdup(optarg);
+        break;
+      case 'P':config->remote_port = strtol(optarg, NULL, 10);
+        break;
+      case 'u':config->username = strdup(optarg);
+        break;
+      case 'p': config->password = strdup(optarg);
+        break;
+      case 's':config->ssl = true;
+        break;
+      case 'l':
+        if (strcasecmp(optarg, "debug") == 0) {
+          set_log_level(LIB_LOG_DEBUG);
+        } else if (strcasecmp(optarg, "info") == 0) {
+          set_log_level(LIB_LOG_INFO);
+        } else if (strcasecmp(optarg, "error") == 0) {
+          set_log_level(LIB_LOG_ERROR);
+        }
+        break;
+      case 'h':docks_usage();
+      default:return -1;
     }
   }
 

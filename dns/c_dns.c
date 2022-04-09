@@ -18,39 +18,31 @@
 #define C_DNS_NAME_PTR_LEN 2
 
 #ifdef WIN32
-
-static int vscprintf(const char *format, va_list ap) {
-  va_list ap_copy;
-  va_copy(ap_copy, ap);
-  int retval = vsnprintf(NULL, 0, format, ap_copy);
-      va_end(ap_copy);
-  return retval;
-}
-
-static int vasprintf(char **strp, const char *format, va_list ap) {
-  int len = vscprintf(format, ap);
-  if (len == -1)
-    return -1;
-  char *str = (char *) malloc((size_t) len + 1);
-  if (!str)
-    return -1;
-  int retval = vsnprintf(str, len + 1, format, ap);
-  if (retval == -1) {
-    free(str);
-    return -1;
-  }
-  *strp = str;
-  return retval;
-}
-
+#define ASPRINTF_STEP_SIZE 64
 static int asprintf(char **strp, const char *format, ...) {
+  int ret = -1;
+  unsigned int buf_len = strlen(format) + ASPRINTF_STEP_SIZE;
+  char *tmp = malloc(sizeof(buf_len));
   va_list ap;
-      va_start(ap, format);
-  int retval = vasprintf(strp, format, ap);
-      va_end(ap);
-  return retval;
-}
+  va_start(ap, format);
+  do {
+    ret = vsprintf_s(tmp, buf_len, format, ap);
+    if (ret < 0) {
+      buf_len += ASPRINTF_STEP_SIZE;
+      char *m = realloc(tmp, buf_len);
+      if (tmp != m) {
+        free(tmp);
+      }
+      tmp = m;
+      continue;
+    }
+    break;
+  } while (1);
 
+  *strp = tmp;
+  va_end(ap);
+  return ret;
+}
 #else
 
 #ifndef sprintf_s

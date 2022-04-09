@@ -5,8 +5,8 @@ if [ ! -d ./cmake-build-release ]; then
 fi
 
 cd cmake-build-release || exit
-
-cmake -DCMAKE_BUILD_TYPE=Release -DDEVENT_SSL_ENABLE=1 -G "CodeBlocks - Unix Makefiles" ..
+rm -rf *
+cmake -DCMAKE_BUILD_TYPE=Release -G "CodeBlocks - Unix Makefiles" ..
 
 cmake --build . --target clean -- -j 8
 cmake --build . --target install -- -j 8

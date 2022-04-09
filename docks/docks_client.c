@@ -161,5 +161,5 @@ int main(int argc, char **args) {
   Docket_set_dns_server(docket, "114.114.114.114");
 
   Docket_create_listener(docket, docks_connect_cb, -1, (struct sockaddr *) &local, socklen, &config);
-  return Docket_loop(docket);
+  Docket_loop(docket);
 }
