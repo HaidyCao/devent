@@ -9,7 +9,7 @@ include_directories(../devent/include include)
 string(TOLOWER ${CMAKE_HOST_SYSTEM_NAME} OS)
 message("docks OS = ${OS}")
 
-set(DEVENT_SSL_ENABLE 1)
+option(DEVENT_SSL_ENABLE "openssl enable" 1)
 add_definitions("-DDEVENT_SSL")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/${OS}/include)
 

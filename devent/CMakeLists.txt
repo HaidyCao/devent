@@ -20,6 +20,7 @@ add_library(devent
         accept.c
         write.c
         buffer.c
+        event_lock.c
         connect.c
         dns.c
         loop.c)

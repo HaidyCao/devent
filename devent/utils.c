@@ -24,6 +24,9 @@ char *devent_errno() {
   static char msg[1024];
   bzero(&msg, sizeof(msg));
 #ifdef WIN32
+  char lastErrorMsg[1024];
+  bzero(&lastErrorMsg, sizeof(lastErrorMsg));
+
   FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
                 NULL,
                 WSAGetLastError(),
@@ -31,7 +34,21 @@ char *devent_errno() {
                 msg,
                 sizeof(msg),
                 NULL);
-  sprintf(msg, "lastError = %d, WSALastError = %s", WSAGetLastError(), msg);
+
+  FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                NULL,
+                GetLastError(),
+                MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                lastErrorMsg,
+                sizeof(lastErrorMsg),
+                NULL);
+
+  sprintf(msg,
+          "WSALastErrorCode = %d, WSALastError = %s, LastError = %lu, LastError = %s",
+          WSAGetLastError(),
+          msg,
+          GetLastError(),
+          lastErrorMsg);
 #else
   sprintf(msg, "errno = %d, errmsg: %s", errno, strerror(errno));
 #endif

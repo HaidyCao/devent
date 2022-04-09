@@ -11,34 +11,22 @@ add_executable(devent_test main.c utils_test.c utils_test.h echo_server_test.c e
 
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -no-pie -mcmodel=large")
 #set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -no-pie -mcmodel=large")
-
-if (DEVENT_SSL_ENABLE)
-    add_definitions("-DDEVENT_SSL")
-    message("Devent.test ssl is enable")
-
-    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../dependencies/${OS}/include)
-endif ()
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../dependencies/${OS}/include)
 
 if (WIN32)
-    add_executable(
-            win_devent_test
-
-            win_main.c
-            echo_server_test.c
-            telnet_test.c
-            ssl_telnet_test.c
-    )
-
-    target_link_libraries(
-            win_devent_test
-
-            devent
-            cdns
-            coll
-            Crypt32
-    )
     set(CRYPT32 "Crypt32")
 endif ()
+target_compile_definitions(
+        devent
+        PRIVATE
+
+        DEVENT_MULTI_THREAD
+        DEVENT_SSL
+)
+add_definitions(
+        "-DDEVENT_SSL -DDEVENT_MULTI_THREAD"
+)
+option(DEVENT_SSL_ENABLE "ssl enable" ON)
 
 target_link_libraries(
         devent_test

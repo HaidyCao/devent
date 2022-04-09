@@ -13,7 +13,7 @@
 #endif
 
 #ifdef DEVENT_MULTI_THREAD
-#include <pthread.h>
+#include "event_lock.h"
 #endif
 
 #include "def.h"
@@ -34,16 +34,15 @@ struct docket_buffer {
   CLinkedList *list;
 
 #ifdef DEVENT_MULTI_THREAD
-  pthread_mutex_t mutex;
+  DEventLock *lock;
 #endif
 };
 
 #ifdef DEVENT_MULTI_THREAD
-#define LOCK(buf, block)                \
-    pthread_mutex_lock(&(buf)->mutex);    \
-    block                               \
-    pthread_mutex_unlock(&(buf)->mutex);
-
+#define LOCK(buf, block)            \
+    DEventLock_lock((buf)->lock);   \
+    block                           \
+    DEventLock_unlock((buf)->lock);
 #else
 
 #define LOCK(buffer, block) \
@@ -91,9 +90,8 @@ DocketBuffer *DocketBuffer_new() {
   buffer->list = CLinkedList_new();
 
 #ifdef DEVENT_MULTI_THREAD
-  pthread_mutex_init(&buffer->mutex, NULL);
+  buffer->lock = DEventLock_new();
 #endif
-
   return buffer;
 }
 
@@ -109,7 +107,7 @@ void DocketBuffer_free(DocketBuffer *buffer) {
   })
 
 #ifdef DEVENT_MULTI_THREAD
-  pthread_mutex_destroy(&buffer->mutex);
+  DEventLock_free(buffer->lock);
 #endif
 }
 

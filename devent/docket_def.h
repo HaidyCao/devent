@@ -15,6 +15,10 @@
 #define IOCP_OP_WRITE 2
 #define IOCP_OP_CONNECT 4
 
+#ifndef DOCKET_RECV_BUF_SIZE
+#define DOCKET_RECV_BUF_SIZE 40960
+#endif
+
 typedef struct {
   OVERLAPPED lpOverlapped;
   int op;

@@ -40,7 +40,6 @@
 #include "utils.h"
 
 #ifdef WIN32
-#define RECV_BUF_SIZE 40960
 
 #ifdef WIN32
 #include <iphlpapi.h>
@@ -53,8 +52,8 @@ IO_CONTEXT *IO_CONTEXT_new(int op, SOCKET socket) {
   ctx->op = op;
   ctx->socket = socket;
   if (ctx->op == IOCP_OP_READ) {
-    ctx->buf.len = RECV_BUF_SIZE;
-    ctx->buf.buf = malloc(RECV_BUF_SIZE);
+    ctx->buf.len = DOCKET_RECV_BUF_SIZE;
+    ctx->buf.buf = malloc(DOCKET_RECV_BUF_SIZE);
   } else {
     ctx->buf.buf = NULL;
   }
