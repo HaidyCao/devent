@@ -15,7 +15,7 @@
 #define LOGI(fmt, ...) printf("[%s(%d):%s]: " fmt "\n", __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 #define LOGE(fmt, ...) printf("[%s(%d):%s]: " fmt "\n", __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 
-#ifdef WIN32
+#ifndef PATH_MAX
 #ifndef PATH_MAX
 #define PATH_MAX 260
 #endif

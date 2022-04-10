@@ -51,21 +51,27 @@ if (DEVENT_SSL_ENABLE)
     message("find ssl from: ../dependencies/${OS}/bin/")
     message("LIB_SSL = ${LIB_SSL}, LIB_CRYPTO = ${LIB_CRYPTO}")
 
-    find_library(
-            OPENSSL_SSL
-            ${LIB_SSL}
+    if (ANDROID)
+        set(OPENSSL_SSL "openssl::ssl")
+        set(OPENSSL_CRYPTO "openssl::crypto")
+    else ()
+        find_library(
+                OPENSSL_SSL
+                ${LIB_SSL}
 
             ../dependencies/${OS}/lib/
             ../dependencies/${OS}/bin/
     )
 
-    find_library(
-            OPENSSL_CRYPTO
-            ${LIB_CRYPTO}
+        find_library(
+                OPENSSL_CRYPTO
+                ${LIB_CRYPTO}
 
             ../dependencies/${OS}/lib/
             ../dependencies/${OS}/bin/
     )
+
+    endif ()
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/${OS}/include)
 
@@ -85,8 +91,13 @@ if (WIN32)
     endif ()
 else ()
     set(LIBIPHLPAPI "")
-    set(LIBRESOLV "resolv")
-    find_library(LIB_PTHREAD pthread)
+    if (ANDROID)
+        set(LIBRESOLV "")
+        set(LIB_PTHREAD "")
+    else ()
+        set(LIBRESOLV "resolv")
+        find_library(LIB_PTHREAD pthread)
+    endif ()
     find_library(LIB_DL dl)
 
     message("LIB_PTHREAD = ${LIB_PTHREAD}")

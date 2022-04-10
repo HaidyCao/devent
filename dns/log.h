@@ -20,20 +20,7 @@ int get_dns_log_level(void);
 #define set_log_level set_dns_log_level
 #define get_log_level get_dns_log_level
 
-#ifdef __ANDROID__
-#include <android/log.h>
-void alog(int level, const char *fmt, ...);
-
-#define LOGT(fmt, ...) alog(LIB_LOG_TRACE, "[%s(%d):%s]: " fmt "\n", basename(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__)
-
-#define LOGD(fmt, ...) alog(LIB_LOG_DEBUG, "[%s(%d):%s]: " fmt "\n", basename(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__)
-
-#define LOGI(fmt, ...) alog(LIB_LOG_INFO, "[%s(%d):%s]: " fmt "\n", basename(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__)
-
-#define LOGE(fmt, ...) alog(LIB_LOG_ERROR, "[%s(%d):%s]: " fmt "\n", basename(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__)
-
-#define LOGW(fmt, ...) alog(LIB_LOG_WARNING, "[%s(%d):%s]: " fmt "\n", basename(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__)
-#elif defined(EVENT_LOG_DISABLED)
+#if defined(EVENT_LOG_DISABLED)
 #define LOGT(fmt, ...)
 
 #define LOGD(fmt, ...)

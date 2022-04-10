@@ -219,6 +219,9 @@ int Docket_get_dns_server(Docket *docket, struct sockaddr **address, socklen_t *
       LOGD("dns_address: %s", sockaddr_to_string(dns_address, NULL, 0));
     }
 #else
+#ifdef __ANDROID__
+    return -1;
+#else
     struct __res_state state;
     res_ninit(&state);
 
@@ -235,6 +238,7 @@ int Docket_get_dns_server(Docket *docket, struct sockaddr **address, socklen_t *
       LOGE("dns server is null");
       return -1;
     }
+#endif
 #endif
   }
   *address = dns_address;
