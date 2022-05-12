@@ -38,6 +38,13 @@ void Docket_add_listener(Docket *docket, DocketListener *listener);
 int Docket_set_dns_server(Docket *docket, char *server);
 
 /**
+ * set dns server callback
+ * @param docket docket
+ * @param fn function
+ */
+void Docket_set_dns_server_callback(Docket *docket, docket_fn_custom_dns_server fn);
+
+/**
  * get listener of fd
  * @param docket docket
  * @param fd fd
@@ -64,8 +71,6 @@ void Docket_add_event(DocketEvent *event);
  * @param event event
  */
 void Docket_remove_event(DocketEvent *event);
-
-int Docket_get_dns_server(Docket *docket, struct sockaddr **address, socklen_t *address_len);
 
 /**
  * Docket will loop if no error

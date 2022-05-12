@@ -26,6 +26,15 @@ DocketDnsContext *DocketDnsContext_new(DocketEvent *event, char *domain, unsigne
 void DocketDnsContext_free(DocketDnsContext *dns_context);
 
 /**
+ * setup default dns
+ * @param address dns server address
+ * @param len address size
+ */
+void docket_setup_dns_server(struct sockaddr *address, unsigned int len);
+
+bool Docket_get_dns_server(Docket *docket, struct sockaddr **address, socklen_t *address_len);
+
+/**
  * write dns packet to dns server
  * @param event dns udp event
  */

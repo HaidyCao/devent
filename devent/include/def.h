@@ -13,6 +13,7 @@ extern "C" {
 #ifndef WIN32
 typedef int SOCKET;
 #endif
+#include <stdbool.h>
 
 #define DEVENT_LOG_DEBUG 0
 
@@ -30,6 +31,8 @@ typedef struct docket Docket;
 typedef struct docket_listener DocketListener;
 
 typedef struct docket_buffer DocketBuffer;
+
+typedef bool (*docket_fn_custom_dns_server)(struct sockaddr **p_sockaddr, unsigned int *len);
 
 #ifdef __cplusplus
 }

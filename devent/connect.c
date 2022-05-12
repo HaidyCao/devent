@@ -29,6 +29,7 @@ static LPFN_CONNECTEX lpfnConnectex = NULL;
 #include "docket_def.h"
 #include "win_def.h"
 #include "event_ssl.h"
+#include "dns.h"
 
 static void on_dns_read(DocketEvent *event, void *ctx) {
   docket_dns_read(event);
@@ -247,7 +248,9 @@ DocketEvent *DocketEvent_connect_hostname_internal(Docket *docket, SOCKET fd, co
   // create dns event
   struct sockaddr *dns_server_address;
   socklen_t dns_server_address_len;
-  Docket_get_dns_server(docket, &dns_server_address, &dns_server_address_len);
+  if (!Docket_get_dns_server(docket, &dns_server_address, &dns_server_address_len)) {
+    return NULL;
+  }
   LOGD("dns server: %s, len = %d", sockaddr_to_string(dns_server_address, NULL, 0), dns_server_address_len);
 
   DocketEvent *dns = DocketEvent_create_udp(docket, -1, dns_server_address, dns_server_address_len);
@@ -255,6 +258,9 @@ DocketEvent *DocketEvent_connect_hostname_internal(Docket *docket, SOCKET fd, co
 #ifdef DEVENT_SSL
   ctx->event_ssl = ssl;
 #endif
+  if (dns == NULL) {
+    return NULL;
+  }
 
   // read dns packet
   DocketEvent_set_read_cb(dns, on_dns_read, ctx);

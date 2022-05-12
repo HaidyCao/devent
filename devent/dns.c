@@ -3,7 +3,14 @@
 //
 #include <stdlib.h>
 #include <string.h>
-#ifndef WIN32
+
+#ifdef WIN32
+#include <WinSock2.h>
+#include <WS2tcpip.h>
+
+#pragma comment(lib, "ws2_32.lib")
+#else
+#include <resolv.h>
 #include <sys/socket.h>
 #endif
 
@@ -30,7 +37,8 @@ DocketDnsContext *DocketDnsContext_new(DocketEvent *event, char *domain, unsigne
 }
 
 void DocketDnsContext_free(DocketDnsContext *dns_context) {
-  if (dns_context == NULL) return;
+  if (dns_context == NULL)
+    return;
 
   free(dns_context->domain);
   free(dns_context);
@@ -84,7 +92,9 @@ void docket_dns_read(DocketEvent *dns_event) {
 
   ssize_t size = DocketEvent_read(dns_event, dns_buffer, DNS_BUFFER_SIZE);
   if (size < 0) {
-    LOGE("read dns data failed: recvfrom %s failed: %s", sockaddr_to_string(dns_address, NULL, 0), devent_errno());
+    LOGE("read dns data failed: recvfrom %s failed: %s",
+         sockaddr_to_string(dns_address, NULL, 0),
+         devent_errno());
     on_dns_failed(dns_event, dns_context);
     return;
   }
@@ -100,7 +110,9 @@ void docket_dns_read(DocketEvent *dns_event) {
   socklen_t addr_len = sizeof(addr);
   if (c_dns_parse_first_ip(host, (struct sockaddr *) &addr, &addr_len, dns_context->port) == -1) {
     c_dns_free_hostent(host);
-    LOGE("c_dns_parse_first_ip %s failed: %s", sockaddr_to_string(dns_address, NULL, 0), devent_errno());
+    LOGE("c_dns_parse_first_ip %s failed: %s",
+         sockaddr_to_string(dns_address, NULL, 0),
+         devent_errno());
     on_dns_failed(dns_event, dns_context);
     return;
   }
@@ -120,4 +132,87 @@ void docket_dns_read(DocketEvent *dns_event) {
 
   DocketEvent_free(dns_event);
   DocketDnsContext_free(dns_context);
+}
+
+bool Docket_get_dns_server(Docket *docket, struct sockaddr **address, socklen_t *address_len) {
+  SOCK_ADDRESS dns_address = docket->dns_server.address;
+  socklen_t socklen = docket->dns_server.socklen;
+  // init dns name server
+  if (dns_address == NULL) {
+    if (docket->dns_server_callback != NULL && docket->dns_server_callback(address, address_len)) {
+      return true;
+    }
+
+#ifdef WIN32
+    ULONG buf_len = sizeof(FIXED_INFO);
+    FIXED_INFO *fixed_info = malloc(sizeof(FIXED_INFO));
+
+    DWORD res = GetNetworkParams(fixed_info, &buf_len);
+    if (res == ERROR_BUFFER_OVERFLOW) {
+      fixed_info = malloc(buf_len);
+      if (fixed_info == NULL) {
+        LOGE("malloc fixed_info failed");
+        return -1;
+      }
+      res = GetNetworkParams(fixed_info, &buf_len);
+    }
+
+    if (res == NO_ERROR) {
+      socklen = sizeof(struct sockaddr_in);
+      dns_address = malloc(sizeof(struct sockaddr_in));
+      dns_address->sa_family = AF_INET;
+      ((struct sockaddr_in *) dns_address)->sin_port = htons(53);
+      if (fixed_info->CurrentDnsServer) {
+        if (inet_pton(AF_INET,
+                      fixed_info->CurrentDnsServer->IpAddress.String,
+                      &((struct sockaddr_in *) dns_address)->sin_addr) == 1) {
+          docket->dns_server.address = dns_address;
+          docket->dns_server.socklen = socklen;
+        } else {
+          // TODO default dns server
+        }
+      } else {
+        if (inet_pton(AF_INET,
+                      fixed_info->DnsServerList.IpAddress.String,
+                      &((struct sockaddr_in *) dns_address)->sin_addr) == 1) {
+          docket->dns_server.address = dns_address;
+          docket->dns_server.socklen = socklen;
+        } else {
+          // TODO default dns server
+        }
+      }
+
+      LOGD("dns_address: %s", sockaddr_to_string(dns_address, NULL, 0));
+    }
+#else
+#ifdef __ANDROID__
+    return false;
+#else
+    struct __res_state state;
+    res_ninit(&state);
+
+    if (state.nscount > 0) {
+      for (int i = 0; i < state.nscount; ++i) {
+        if (state.nsaddr_list[i].sin_family == AF_INET) {
+          size_t len = sizeof(state.nsaddr_list[i]);
+          dns_address = malloc(len);
+          memcpy(dns_address, &state.nsaddr_list[i], len);
+          docket->dns_server.address = dns_address;
+          socklen = docket->dns_server.socklen = len;
+          break;
+        }
+      }
+    }
+
+    res_nclose(&state);
+    if (dns_address == NULL) {
+      LOGE("dns server is null");
+      return false;
+    }
+#endif
+#endif
+  }
+  *address = dns_address;
+  *address_len = socklen;
+  return true;
 }

@@ -47,6 +47,7 @@ void IO_CONTEXT_free(IO_CONTEXT *ctx);
 #include "openssl/err.h"
 
 #endif
+#include "def.h"
 
 typedef struct sockaddr *SOCK_ADDRESS;
 
@@ -84,6 +85,8 @@ struct docket {
    * events
    */
   CSparseArray *events;
+
+  docket_fn_custom_dns_server dns_server_callback;
 
 #ifdef DEVENT_SSL
   SSL_CTX *ssl_ctx;

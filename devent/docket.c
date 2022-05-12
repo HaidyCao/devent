@@ -20,15 +20,6 @@
 
 #endif
 
-#ifdef WIN32
-#include <WinSock2.h>
-#include <WS2tcpip.h>
-
-#pragma comment(lib, "ws2_32.lib")
-#else
-#include <resolv.h>
-#endif
-
 #include "docket.h"
 #include "docket_def.h"
 #include "listener_def.h"
@@ -138,6 +129,10 @@ int Docket_set_dns_server(Docket *docket, char *server) {
   return 0;
 }
 
+void Docket_set_dns_server_callback(Docket *docket, docket_fn_custom_dns_server fn) {
+  docket->dns_server_callback = fn;
+}
+
 void Docket_add_listener(Docket *docket, DocketListener *listener) {
   if (docket == NULL) {
     LOGE("docket is NULL");
@@ -170,79 +165,4 @@ DocketEvent *Docket_find_event(Docket *docket, SOCKET fd) {
   if (docket == NULL)
     return NULL;
   return CSparseArray_get(docket->events, fd);
-}
-
-int Docket_get_dns_server(Docket *docket, struct sockaddr **address, socklen_t *address_len) {
-  SOCK_ADDRESS dns_address = docket->dns_server.address;
-  socklen_t socklen = docket->dns_server.socklen;
-  // init dns name server
-  if (dns_address == NULL) {
-#ifdef WIN32
-    ULONG buf_len = sizeof(FIXED_INFO);
-    FIXED_INFO *fixed_info = malloc(sizeof(FIXED_INFO));
-
-    DWORD res = GetNetworkParams(fixed_info, &buf_len);
-    if (res == ERROR_BUFFER_OVERFLOW) {
-      fixed_info = malloc(buf_len);
-      if (fixed_info == NULL) {
-        LOGE("malloc fixed_info failed");
-        return -1;
-      }
-      res = GetNetworkParams(fixed_info, &buf_len);
-    }
-
-    if (res == NO_ERROR) {
-      socklen = sizeof(struct sockaddr_in);
-      dns_address = malloc(sizeof(struct sockaddr_in));
-      dns_address->sa_family = AF_INET;
-      ((struct sockaddr_in *) dns_address)->sin_port = htons(53);
-      if (fixed_info->CurrentDnsServer) {
-        if (inet_pton(AF_INET,
-                      fixed_info->CurrentDnsServer->IpAddress.String,
-                      &((struct sockaddr_in *) dns_address)->sin_addr) == 1) {
-          docket->dns_server.address = dns_address;
-          docket->dns_server.socklen = socklen;
-        } else {
-          // TODO default dns server
-        }
-      } else {
-        if (inet_pton(AF_INET,
-                      fixed_info->DnsServerList.IpAddress.String,
-                      &((struct sockaddr_in *) dns_address)->sin_addr) == 1) {
-          docket->dns_server.address = dns_address;
-          docket->dns_server.socklen = socklen;
-        } else {
-          // TODO default dns server
-        }
-      }
-
-      LOGD("dns_address: %s", sockaddr_to_string(dns_address, NULL, 0));
-    }
-#else
-#ifdef __ANDROID__
-    return -1;
-#else
-    struct __res_state state;
-    res_ninit(&state);
-
-    if (state.nscount > 0) {
-      size_t len = sizeof(state.nsaddr_list[0]);
-      dns_address = malloc(len);
-      memcpy(dns_address, &state.nsaddr_list[0], len);
-      docket->dns_server.address = dns_address;
-      socklen = docket->dns_server.socklen = len;
-    }
-
-    res_nclose(&state);
-    if (dns_address == NULL) {
-      LOGE("dns server is null");
-      return -1;
-    }
-#endif
-#endif
-  }
-  *address = dns_address;
-  *address_len = socklen;
-
-  return 0;
 }
