@@ -45,13 +45,13 @@ if (DEVENT_SSL_ENABLE)
     message("Devent ssl is enable")
 
     string(REGEX REPLACE "(.*/)\(.*\)" "\\1" DEVENT_C_COMPILER_DIR ${CMAKE_C_COMPILER})
-#    set(CMAKE_LIBRARY_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/${OS}/lib/)
+    #    set(CMAKE_LIBRARY_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/${OS}/lib/)
 
     message("find ssl from: ../dependencies/${OS}/lib/")
     message("find ssl from: ../dependencies/${OS}/bin/")
     message("LIB_SSL = ${LIB_SSL}, LIB_CRYPTO = ${LIB_CRYPTO}")
 
-    if (ANDROID)
+    if (ANDROID AND NOT "${CMAKE_HOST_SYSTEM}" MATCHES "Android-*")
         set(OPENSSL_SSL "openssl::ssl")
         set(OPENSSL_CRYPTO "openssl::crypto")
     else ()
@@ -59,17 +59,17 @@ if (DEVENT_SSL_ENABLE)
                 OPENSSL_SSL
                 ${LIB_SSL}
 
-            ../dependencies/${OS}/lib/
-            ../dependencies/${OS}/bin/
-    )
+                ../dependencies/${OS}/lib/
+                ../dependencies/${OS}/bin/
+        )
 
         find_library(
                 OPENSSL_CRYPTO
                 ${LIB_CRYPTO}
 
-            ../dependencies/${OS}/lib/
-            ../dependencies/${OS}/bin/
-    )
+                ../dependencies/${OS}/lib/
+                ../dependencies/${OS}/bin/
+        )
 
     endif ()
 
@@ -98,7 +98,16 @@ else ()
         set(LIBRESOLV "resolv")
         find_library(LIB_PTHREAD pthread)
     endif ()
-    find_library(LIB_DL dl)
+
+    if (ANDROID AND "${CMAKE_HOST_SYSTEM}" MATCHES "Android-*")
+        if (${CMAKE_CL_64})
+            find_library(LIB_DL dl /system/lib64)
+        else ()
+            find_library(LIB_DL dl /system/lib)
+        endif ()
+    else ()
+        find_library(LIB_DL dl)
+    endif ()
 
     message("LIB_PTHREAD = ${LIB_PTHREAD}")
     message("LIB_DL = ${LIB_DL}")

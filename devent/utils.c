@@ -10,6 +10,7 @@
 #include <WinSock2.h>
 #else
 #include <fcntl.h>
+#include <strings.h>
 #endif
 #include "utils_internal.h"
 #include "event.h"
@@ -173,11 +174,6 @@ bool errno_is_EAGAIN(int eno) {
     return true;
   }
 
-#ifndef __APPLE__
-  if (eno == EWOULDBLOCK) {
-    return true;
-  }
-#endif
   return false;
 }
 

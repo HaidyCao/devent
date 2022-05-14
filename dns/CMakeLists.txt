@@ -10,17 +10,8 @@ cmake_minimum_required(VERSION 3.4.1)
 # You can define multiple libraries, and CMake builds them for you.
 # Gradle automatically packages shared libraries with your APK.
 
-if (CMAKE_HOST_APPLE)
-    set(OS darwin)
-    set(M_OS darwin)
-elseif (CMAKE_HOST_UNIX)
-    set(OS linux)
-    set(M_OS linux)
-endif ()
-if (DEFINED ANDROID_ABI)
-    set(OS android)
-endif ()
-message("OS = ${OS}; CMAKE_SOURCE_DIR = ${CMAKE_SOURCE_DIR}; M_OS = ${M_OS}")
+
+message("CMAKE_SOURCE_DIR = ${CMAKE_SOURCE_DIR}; M_OS = ${CMAKE_HOST_SYSTEM}")
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
     add_definitions("-DEVENT_LOG_DISABLED -O2")
@@ -39,10 +30,28 @@ add_library( # Sets the name of the library.
         c_dns_header.c)
 
 if (ANDROID)
-    find_library( # Sets the name of the path variable.
-            log-lib
+    if ("${CMAKE_HOST_SYSTEM}" MATCHES "Android-*")
+        if (${CMAKE_CL_64})
+            find_library(
+                    log-lib
 
-            log)
+                    log
+                    /system/lib64
+            )
+        else ()
+            find_library(
+                    log-lib
+
+                    log
+                    /system/lib
+            )
+        endif ()
+    else ()
+        find_library(
+                log-lib
+
+                log)
+    endif ()
 else ()
     set(log-lib "")
     add_executable(

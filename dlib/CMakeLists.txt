@@ -52,12 +52,6 @@ add_executable(
         c_array_list.c
         log.c)
 
-target_link_libraries(
-        lib_test
-
-        coll
-)
-
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
 # default, you only need to specify the name of the public NDK library
@@ -70,15 +64,39 @@ else ()
     set(LIB_WS2_32 "")
 endif ()
 
-if (ANDROID)
-    find_library( # Sets the name of the path variable.
-            log-lib
+if (ANDROID AND NOT "${CMAKE_HOST_SYSTEM}" MATCHES "Android-*")
+    if ("${CMAKE_HOST_SYSTEM}" MATCHES "Android-*")
+        if (${CMAKE_CL_64})
+            find_library(
+                    log-lib
 
-            log)
+                    log
+                    /system/lib64
+            )
+        else ()
+            find_library(
+                    log-lib
+
+                    log
+                    /system/lib
+            )
+        endif ()
+    else ()
+        find_library(
+                log-lib
+
+                log)
+    endif ()
 
     target_link_libraries(
             coll
 
+            ${log-lib}
+    )
+    target_link_libraries(
+            lib_test
+
+            coll
             ${log-lib}
     )
 else ()
@@ -86,6 +104,11 @@ else ()
             coll
 
             ${LIB_WS2_32}
+    )
+    target_link_libraries(
+            lib_test
+
+            coll
     )
     set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/${OS})
 endif ()
