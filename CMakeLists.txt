@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.10.2)
 # Declares and names the project.
 project("docket")
 
+set(CMAKE_C_STANDARD 99)
+
 add_subdirectory(dlib)
 add_subdirectory(dns)
 add_subdirectory(devent)

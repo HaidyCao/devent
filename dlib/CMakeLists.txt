@@ -7,6 +7,8 @@ cmake_minimum_required(VERSION 3.10.1)
 
 project("dlib")
 
+set(CMAKE_C_STANDARD 99)
+
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
 # You can define multiple libraries, and CMake builds them for you.

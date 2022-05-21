@@ -10,6 +10,7 @@ cmake_minimum_required(VERSION 3.4.1)
 # You can define multiple libraries, and CMake builds them for you.
 # Gradle automatically packages shared libraries with your APK.
 
+set(CMAKE_C_STANDARD 99)
 
 message("CMAKE_SOURCE_DIR = ${CMAKE_SOURCE_DIR}; M_OS = ${CMAKE_HOST_SYSTEM}")
 
